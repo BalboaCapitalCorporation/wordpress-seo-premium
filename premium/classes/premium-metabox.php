@@ -50,7 +50,7 @@ class WPSEO_Premium_Metabox implements WPSEO_WordPress_Integration {
 				'jquery',
 				'wp-util',
 				'underscore',
-				WPSEO_Admin_Asset_Manager::PREFIX . 'webpack-commons'
+				WPSEO_Admin_Asset_Manager::PREFIX . 'react-dependencies',
 			),
 			WPSEO_VERSION
 		);
@@ -87,7 +87,7 @@ class WPSEO_Premium_Metabox implements WPSEO_WordPress_Integration {
 		$post = $this->get_post();
 
 		$post_type_support = new WPSEO_Premium_Prominent_Words_Support();
-		if ( ! in_array( get_post_type( $post ), $post_type_support->get_supported_post_types(), true ) ) {
+		if ( ! $post_type_support->is_post_type_supported( get_post_type( $post ) ) ) {
 			$insights_enabled = false;
 		}
 
