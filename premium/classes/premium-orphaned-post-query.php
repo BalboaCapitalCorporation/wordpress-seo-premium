@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
@@ -18,34 +20,55 @@ class WPSEO_Premium_Orphaned_Post_Query {
 	public static function get_counts( array $post_types ) {
 		global $wpdb;
 
-		$post_ids         = self::get_orphaned_object_ids();
 		$post_type_counts = array_fill_keys( $post_types, 0 );
-		$post_id_count    = count( $post_ids );
+		$subquery         = self::get_orphaned_content_query();
 
-		if ( $post_id_count > 0 ) {
-			$results = $wpdb->get_results(
-				$wpdb->prepare( // WPCS: PreparedSQLPlaceholders replacement count OK.
-					"SELECT COUNT( ID ) as total_orphaned, post_type
-						FROM {$wpdb->posts}
-						WHERE
-							ID IN ( " . implode( ',', array_fill( 0, (int) $post_id_count, '%d' ) ) . ' )
-							AND post_status = "publish"
-							AND post_type IN ( ' . implode( ',', array_fill( 0, count( $post_types ), '%s' ) ) . ' )
-						GROUP BY post_type',
-					array_merge( $post_ids, $post_types )
-				)
-			);
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT COUNT( ID ) as total_orphaned, post_type
+					FROM {$wpdb->posts}
+					WHERE
+						ID IN ( " . $subquery . " )
+						AND post_status = 'publish'
+						AND post_type IN ( " . implode( ',', array_fill( 0, count( $post_types ), '%s' ) ) . ' )
+					GROUP BY post_type',
+				$post_types
+			)
+		);
 
-			foreach ( $results as $result ) {
-				$post_type_counts[ $result->post_type ] = (int) $result->total_orphaned;
-			}
+		foreach ( $results as $result ) {
+			$post_type_counts[ $result->post_type ] = (int) $result->total_orphaned;
 		}
 
 		return $post_type_counts;
 	}
 
 	/**
-	 * Returns all the object ids from the records with and incoming link count of 0.
+	 * Returns a query to retrieve the object ids from the records with an incoming link count of 0.
+	 *
+	 * @return string Query for get all objects with an incoming link count of 0 from the DB.
+	 */
+	public static function get_orphaned_content_query() {
+		static $query;
+
+		if ( $query === null ) {
+			$storage = new WPSEO_Meta_Storage();
+			$query   = sprintf(
+				'SELECT object_id FROM %1$s WHERE %1$s.incoming_link_count = 0',
+				$storage->get_table_name()
+			);
+
+			$frontpage_id = self::get_frontpage_id();
+			if ( $frontpage_id ) {
+				$query .= " AND object_id != '{ $frontpage_id }' ";
+			}
+		}
+
+		return $query;
+	}
+
+	/**
+	 * Returns all the object ids from the records with an incoming link count of 0.
 	 *
 	 * @return array Array with the object ids.
 	 */
@@ -55,6 +78,7 @@ class WPSEO_Premium_Orphaned_Post_Query {
 		$storage = new WPSEO_Meta_Storage();
 		$query   = 'SELECT object_id FROM ' . $storage->get_table_name() . ' WHERE incoming_link_count = 0';
 
+		// phpcs:ignore WordPress.DB.PreparedSQL -- See above, query is fine without preparing.
 		$object_ids = $wpdb->get_col( $query );
 		$object_ids = self::remove_frontpage_id( $object_ids );
 
@@ -83,5 +107,23 @@ class WPSEO_Premium_Orphaned_Post_Query {
 		}
 
 		return $object_ids;
+	}
+
+	/**
+	 * Retrieves the frontpage id when set, otherwise null.
+	 *
+	 * @return int|null The frontpage id when set.
+	 */
+	protected static function get_frontpage_id() {
+		if ( get_option( 'show_on_front' ) !== 'page' ) {
+			return null;
+		}
+
+		$page_on_front = get_option( 'page_on_front', null );
+		if ( empty( $page_on_front ) ) {
+			return null;
+		}
+
+		return (int) $page_on_front;
 	}
 }

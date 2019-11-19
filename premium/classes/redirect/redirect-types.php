@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
@@ -7,6 +9,12 @@
  * Class representing a list of redirect types.
  */
 class WPSEO_Redirect_Types {
+
+	const TEMPORARY   = 307;
+	const UNAVAILABLE = 451;
+	const DELETED     = 410;
+	const FOUND       = 302;
+	const PERMANENT   = 301;
 
 	/**
 	 * Returns the redirect types.
@@ -23,5 +31,18 @@ class WPSEO_Redirect_Types {
 		);
 
 		return apply_filters( 'wpseo_premium_redirect_types', $redirect_types );
+	}
+
+	/**
+	 * Checks whether the given value is a valid redirect type.
+	 *
+	 * @param string $value Value to check.
+	 *
+	 * @return bool True if a redirect type, false otherwise.
+	 */
+	public function has( $value ) {
+		$types = $this->get();
+
+		return isset( $types[ $value ] );
 	}
 }

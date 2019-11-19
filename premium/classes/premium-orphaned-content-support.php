@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium
  */
 
@@ -25,5 +27,16 @@ class WPSEO_Premium_Orphaned_Content_Support {
 		}
 
 		return $orphaned_post_types;
+	}
+
+	/**
+	 * Checks if the post type is supported.
+	 *
+	 * @param string $post_type The post type to look up.
+	 *
+	 * @return bool True when post type is supported.
+	 */
+	public function is_post_type_supported( $post_type ) {
+		return in_array( $post_type, $this->get_supported_post_types(), true );
 	}
 }

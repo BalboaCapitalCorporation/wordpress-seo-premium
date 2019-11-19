@@ -1,16 +1,26 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Views
+ *
+ * @uses array $view_vars {
+ *     @type string      file_path     The file path to show in the notices.
+ *     @type string|bool redirect_file The redirect file name or false.
+ * }
  */
 
-if ( ! empty( $redirect_file ) ) {
-	switch ( $redirect_file ) {
+$yoast_premium_file_path     = $view_vars['file_path'];
+$yoast_premium_redirect_file = $view_vars['redirect_file'];
+
+if ( ! empty( $yoast_premium_redirect_file ) ) {
+	switch ( $yoast_premium_redirect_file ) {
 		case 'apache_include_file':
 			?>
 			<div class="notice notice-warning inline">
 				<p>
 					<?php esc_html_e( "As you're on Apache, you should add the following include to the website httpd config file:", 'wordpress-seo-premium' ); ?>
-					<br><code>Include <?php echo esc_html( $file_path ); ?></code>
+					<br><code>Include <?php echo esc_html( $yoast_premium_file_path ); ?></code>
 				</p>
 			</div>
 			<?php
@@ -36,7 +46,7 @@ if ( ! empty( $redirect_file ) ) {
 			<div class="notice notice-warning inline">
 				<p>
 					<?php esc_html_e( "As you're on Nginx, you should add the following include to the Nginx config file:", 'wordpress-seo-premium' ); ?>
-					<br><code>include <?php echo esc_html( $file_path ); ?></code>
+					<br><code>include <?php echo esc_html( $yoast_premium_file_path ); ?></code>
 				</p>
 			</div>
 			<?php
@@ -49,7 +59,7 @@ if ( ! empty( $redirect_file ) ) {
 					printf(
 						/* translators: %s expands to the folder location where the redirects fill will be saved. */
 						esc_html__( "We're unable to save the redirect file to %s", 'wordpress-seo-premium' ),
-						esc_html( $file_path )
+						esc_html( $yoast_premium_file_path )
 					);
 					?>
 				</p>
@@ -58,7 +68,7 @@ if ( ! empty( $redirect_file ) ) {
 			break;
 	}
 }
-	?>
+?>
 
 <div id="table-settings" class="tab-url redirect-table-tab">
 <?php echo '<h2>' . esc_html__( 'Redirects settings', 'wordpress-seo-premium' ) . '</h2>'; ?>
@@ -70,10 +80,11 @@ if ( ! empty( $redirect_file ) ) {
 
 		$yform->set_option( 'wpseo_redirect' );
 
-		$yform->toggle_switch( 'disable_php_redirect', array(
-			'off' => '<code>PHP</code>',
-			'on'  => ( WPSEO_Utils::is_apache() ) ? '<code>.htaccess</code>' : __( 'Web server', 'wordpress-seo-premium' ),
-		), __( 'Redirect method', 'wordpress-seo-premium' ) );
+		$yoast_premium_toggle_values = array(
+			'off' => 'PHP',
+			'on'  => ( WPSEO_Utils::is_apache() ) ? '.htaccess' : __( 'Web server', 'wordpress-seo-premium' ),
+		);
+		$yform->toggle_switch( 'disable_php_redirect', $yoast_premium_toggle_values, __( 'Redirect method', 'wordpress-seo-premium' ) );
 
 		if ( WPSEO_Utils::is_apache() ) {
 			/* translators: 1: '.htaccess' file name */

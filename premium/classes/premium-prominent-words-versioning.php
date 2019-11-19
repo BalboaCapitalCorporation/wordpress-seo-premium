@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Admin
  */
 
@@ -10,9 +12,22 @@ class WPSEO_Premium_Prominent_Words_Versioning implements WPSEO_WordPress_Integr
 
 	const VERSION_NUMBER = 1;
 
+	const VERSION_NUMBER_FT_INTERNAL_LINKING = 2;
+
 	const POST_META_NAME = '_yst_prominent_words_version';
 
 	const COLLECTION_PARAM = 'yst_prominent_words_is_unindexed';
+
+	/**
+	 * Determines the version number of prominent words analysis based on the value of the feature flag.
+	 */
+	public static function determine_version_number() {
+		$features = WPSEO_Utils::retrieve_enabled_features();
+		if ( in_array( 'improvedInternalLinking', $features, true ) ) {
+			return self::VERSION_NUMBER_FT_INTERNAL_LINKING;
+		}
+		return self::VERSION_NUMBER;
+	}
 
 	/**
 	 * {@inheritdoc}
@@ -22,12 +37,20 @@ class WPSEO_Premium_Prominent_Words_Versioning implements WPSEO_WordPress_Integr
 			return;
 		}
 
+		add_action( 'rest_api_init', array( $this, 'register_rest_argument' ) );
+	}
+
+	/**
+	 * Registers REST arguments for all relevant post types.
+	 *
+	 * This has to be done at init, to make sure all plugins have registered their post types.
+	 */
+	public function register_rest_argument() {
 		foreach ( $this->get_post_types() as $post_type ) {
 			add_filter( 'rest_' . $post_type . '_query', array( $this, 'rest_add_query_args' ), 10, 2 );
 			add_filter( 'rest_' . $post_type . '_collection_params', array( $this, 'rest_register_collection_param' ) );
 		}
 	}
-
 
 	/**
 	 * Saves the version number as a meta.
@@ -35,7 +58,10 @@ class WPSEO_Premium_Prominent_Words_Versioning implements WPSEO_WordPress_Integr
 	 * @param int $post_id The post ID to save the version number for.
 	 */
 	public function save_version_number( $post_id ) {
-		add_post_meta( $post_id, self::POST_META_NAME, self::VERSION_NUMBER, true );
+		// Add the post meta field if it does not exist yet, update it if it does.
+		if ( ! add_post_meta( $post_id, self::POST_META_NAME, self::determine_version_number(), true ) ) {
+			update_post_meta( $post_id, self::POST_META_NAME, self::determine_version_number() );
+		}
 	}
 
 	/**
@@ -116,7 +142,7 @@ class WPSEO_Premium_Prominent_Words_Versioning implements WPSEO_WordPress_Integr
 	public static function upgrade_4_8() {
 		$language_support = new WPSEO_Premium_Prominent_Words_Language_Support();
 
-		if ( $language_support->is_language_supported( WPSEO_Utils::get_language( get_locale() ) ) ) {
+		if ( $language_support->is_language_supported( WPSEO_Language_Utils::get_language( get_locale() ) ) ) {
 			return;
 		}
 

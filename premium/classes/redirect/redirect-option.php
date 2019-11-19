@@ -1,39 +1,49 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
 /**
- * Class handling the redirect options
+ * Class handling the redirect options.
  */
 class WPSEO_Redirect_Option {
 
 	/**
-	 * The plain redirect option before 3.1
+	 * The plain redirect option before 3.1.
 	 */
 	const OLD_OPTION_PLAIN = 'wpseo-premium-redirects';
 
 	/**
-	 * The regex redirect option before 3.1
+	 * The regex redirect option before 3.1.
 	 */
 	const OLD_OPTION_REGEX = 'wpseo-premium-redirects-regex';
 
 	/**
+	 * The option which contains the redirects base.
+	 *
 	 * @since 3.1
 	 */
 	const OPTION = 'wpseo-premium-redirects-base';
 
 	/**
+	 * The option which contains the  plain redirects.
+	 *
 	 * @since 3.1
 	 */
 	const OPTION_PLAIN = 'wpseo-premium-redirects-export-plain';
 
 	/**
+	 * The option which contains the regex redirects.
+	 *
 	 * @since 3.1
 	 */
 	const OPTION_REGEX = 'wpseo-premium-redirects-export-regex';
 
 	/**
+	 * List of redirects.
+	 *
 	 * @var WPSEO_Redirect[]
 	 */
 	private $redirects = array();
@@ -50,7 +60,7 @@ class WPSEO_Redirect_Option {
 	}
 
 	/**
-	 * Getting the array with all the redirects
+	 * Getting the array with all the redirects.
 	 *
 	 * @return WPSEO_Redirect[]
 	 */
@@ -63,7 +73,7 @@ class WPSEO_Redirect_Option {
 	}
 
 	/**
-	 * Check if the old redirect doesn't exist already, if not it will be added
+	 * Check if the old redirect doesn't exist already, if not it will be added.
 	 *
 	 * @param WPSEO_Redirect $redirect The redirect object to save.
 	 *
@@ -71,6 +81,8 @@ class WPSEO_Redirect_Option {
 	 */
 	public function add( WPSEO_Redirect $redirect ) {
 		if ( $this->search( $redirect->get_origin() ) === false ) {
+			$this->run_redirects_modified_action( $redirect );
+
 			$this->redirects[] = $redirect;
 
 			return true;
@@ -90,6 +102,8 @@ class WPSEO_Redirect_Option {
 	public function update( WPSEO_Redirect $current_redirect, WPSEO_Redirect $redirect ) {
 		$found = $this->search( $current_redirect->get_origin() );
 		if ( $found !== false ) {
+			$this->run_redirects_modified_action( $redirect );
+
 			$this->redirects[ $found ] = $redirect;
 
 			return true;
@@ -99,7 +113,7 @@ class WPSEO_Redirect_Option {
 	}
 
 	/**
-	 * Deletes the given redirect from the array
+	 * Deletes the given redirect from the array.
 	 *
 	 * @param WPSEO_Redirect $current_redirect The redirect that will be removed.
 	 *
@@ -108,6 +122,8 @@ class WPSEO_Redirect_Option {
 	public function delete( WPSEO_Redirect $current_redirect ) {
 		$found = $this->search( $current_redirect->get_origin() );
 		if ( $found !== false ) {
+			$this->run_redirects_modified_action( $current_redirect );
+
 			unset( $this->redirects[ $found ] );
 
 			return true;
@@ -117,7 +133,7 @@ class WPSEO_Redirect_Option {
 	}
 
 	/**
-	 * Get a redirect from the array
+	 * Get a redirect from the array.
 	 *
 	 * @param string $origin The redirects origin to search for.
 	 *
@@ -133,7 +149,7 @@ class WPSEO_Redirect_Option {
 	}
 
 	/**
-	 * Check if the $origin already exists as a key in the array
+	 * Check if the $origin already exists as a key in the array.
 	 *
 	 * @param string $origin The redirect to search for.
 	 *
@@ -150,7 +166,7 @@ class WPSEO_Redirect_Option {
 	}
 
 	/**
-	 * Saving the redirects
+	 * Saving the redirects.
 	 *
 	 * @param bool $retry_upgrade Whether or not to retry the 3.1 upgrade. Used to prevent infinite recursion.
 	 */
@@ -171,7 +187,7 @@ class WPSEO_Redirect_Option {
 	}
 
 	/**
-	 * Setting the redirects property
+	 * Setting the redirects property.
 	 *
 	 * @param string $option_name The target option name.
 	 *
@@ -184,6 +200,24 @@ class WPSEO_Redirect_Option {
 		}
 
 		return $redirects;
+	}
+
+	/**
+	 * Runs the redirects modified hook with the altered redirect as input.
+	 *
+	 * @param WPSEO_Redirect $redirect The redirect that has been altered.
+	 *
+	 * @return void
+	 */
+	protected function run_redirects_modified_action( WPSEO_Redirect $redirect ) {
+		/**
+		 * Filter: wpseo_premium_redirects_modified - Allow developers run actions when the redirects are modified.
+		 *
+		 * @api   string $origin The redirect origin.
+		 * @param string $target The redirect target.
+		 * @param int    $type   The redirect type (301, 404, 410, etc).
+		 */
+		do_action( 'wpseo_premium_redirects_modified', $redirect->get_origin(), $redirect->get_target(), $redirect->get_type() );
 	}
 
 	/**

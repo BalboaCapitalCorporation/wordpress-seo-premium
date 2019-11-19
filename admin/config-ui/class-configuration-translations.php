@@ -1,17 +1,27 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\ConfigurationUI
  */
 
 /**
- * Class WPSEO_Configuration_Structure
+ * Class WPSEO_Configuration_Structure.
  */
 class WPSEO_Configuration_Translations {
 
-	/** @var array Registered steps */
+	/**
+	 * Registered steps.
+	 *
+	 * @var array
+	 */
 	protected $translations = array();
 
-	/** @var string The locale */
+	/**
+	 * The locale.
+	 *
+	 * @var string
+	 */
 	protected $locale;
 
 	/**
@@ -25,7 +35,7 @@ class WPSEO_Configuration_Translations {
 	}
 
 	/**
-	 * Retrieve the translations
+	 * Retrieve the translations.
 	 *
 	 * @return array
 	 */

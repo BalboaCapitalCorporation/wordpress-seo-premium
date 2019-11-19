@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium
  */
 
@@ -8,12 +10,30 @@
  */
 class WPSEO_Premium_Prominent_Words_Recalculation_Endpoint implements WPSEO_WordPress_Integration {
 
+	/**
+	 * The REST API namespace.
+	 *
+	 * @var string
+	 */
 	const REST_NAMESPACE = 'yoast/v1';
+
+	/**
+	 * The REST API endpoint.
+	 *
+	 * @var string
+	 */
 	const ENDPOINT_QUERY = 'complete_recalculation';
 
+	/**
+	 * The capability needed to retrieve the recalculation data.
+	 *
+	 * @var string
+	 */
 	const CAPABILITY_RETRIEVE = 'edit_posts';
 
 	/**
+	 * Instance of the WPSEO_Premium_Prominent_Words_Recalculation_Service class.
+	 *
 	 * @var WPSEO_Premium_Prominent_Words_Recalculation_Service
 	 */
 	protected $service;
@@ -38,7 +58,7 @@ class WPSEO_Premium_Prominent_Words_Recalculation_Endpoint implements WPSEO_Word
 	 * Register the REST endpoint to WordPress.
 	 */
 	public function register() {
-		register_rest_route( self::REST_NAMESPACE, self::ENDPOINT_QUERY, array(
+		$route_args = array(
 			'methods'             => 'GET',
 			'callback'            => array(
 				$this->service,
@@ -48,7 +68,8 @@ class WPSEO_Premium_Prominent_Words_Recalculation_Endpoint implements WPSEO_Word
 				$this,
 				'can_retrieve_data',
 			),
-		) );
+		);
+		register_rest_route( self::REST_NAMESPACE, self::ENDPOINT_QUERY, $route_args );
 	}
 
 	/**

@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
@@ -9,14 +11,11 @@
 abstract class WPSEO_Watcher {
 
 	/**
-	 * @var string The type to watch for.
+	 * The type to watch for.
+	 *
+	 * @var string
 	 */
 	protected $watch_type;
-
-	/**
-	 * The hooks being set for the given watcher
-	 */
-	abstract protected function set_hooks();
 
 	/**
 	 * Returns the undo notification text for the given watcher
@@ -33,18 +32,17 @@ abstract class WPSEO_Watcher {
 	abstract protected function get_delete_notification();
 
 	/**
-	 * Parses the hidden field with the old URL to show in the form
+	 * Registers the page scripts.
 	 *
-	 * @param string $url  The old URL.
-	 * @param string $type The type of the URL.
+	 * @codeCoverageIgnore Method uses WordPress functions.
 	 *
-	 * @return string
+	 * @param string $current_page The page that is opened at the moment.
+	 *
+	 * @return void
 	 */
-	protected function parse_url_field( $url, $type ) {
-
-		// Output the hidden field.
-		return '<input type="hidden" name="' . esc_attr( 'wpseo_old_' . $type . '_url' ) . '" value="' . esc_attr( $url ) . '"/>';
-
+	public function page_scripts( $current_page ) {
+		wp_localize_script( 'wp-seo-premium-redirect-notifications', 'wpseoPremiumStrings', WPSEO_Premium_Javascript_Strings::strings() );
+		wp_localize_script( 'wp-seo-premium-quickedit-notification', 'wpseoPremiumStrings', WPSEO_Premium_Javascript_Strings::strings() );
 	}
 
 	/**
@@ -89,7 +87,6 @@ abstract class WPSEO_Watcher {
 
 			Yoast_Notification_Center::get()->add_notification( new Yoast_Notification( $message, $arguments ) );
 		}
-
 	}
 
 	/**
@@ -105,7 +102,7 @@ abstract class WPSEO_Watcher {
 			$this->get_delete_notification(),
 			'Yoast SEO Premium',
 			$this->get_delete_action_list( $url, $id ),
-			'<a target="_blank" href="https://yoast.com/deleting-pages-from-your-site/#utm_source=wordpress-seo-premium-' . $this->watch_type . '-watcher&amp;utm_medium=dialog&amp;utm_campaign=410-redirect">',
+			'<a target="_blank" href="' . WPSEO_Shortlinker::get( 'https://yoa.st/2jd' ) . '">',
 			'</a>'
 		);
 
@@ -159,7 +156,7 @@ abstract class WPSEO_Watcher {
 	 *
 	 * @return string
 	 */
-	protected function javascript_create_redirect( $url, $id, $type = WPSEO_Redirect::PERMANENT ) {
+	protected function javascript_create_redirect( $url, $id, $type = WPSEO_Redirect_Types::PERMANENT ) {
 		return sprintf(
 			'wpseoCreateRedirect( "%1$s", "%2$s", "%3$s", this );',
 			esc_js( $url ),
@@ -209,11 +206,24 @@ abstract class WPSEO_Watcher {
 			$this->get_undo_slug_notification(),
 			'Yoast SEO Premium',
 			'<a target="_blank" href="' . $this->admin_redirect_url( $redirect->get_origin() ) . '">',
-			'</a>',
-			$this->create_hyperlink_from_url( $old_url ),
-			$this->create_hyperlink_from_url( $new_url ),
-			'<button type="button" class="button" onclick=\'' . $this->javascript_undo_redirect( $redirect, $id ) . '\'>',
-			'</button>'
+			'</a>'
+		);
+
+		$message .= '<br>';
+		$message .= esc_html__( 'Old URL:', 'wordpress-seo-premium' ) . ' ' . $this->create_hyperlink_from_url( $old_url );
+		$message .= '<br>';
+		$message .= esc_html__( 'New URL:', 'wordpress-seo-premium' ) . ' ' . $this->create_hyperlink_from_url( $new_url );
+		$message .= '<br><br>';
+
+		$message .= sprintf(
+			'<button type="button" class="button-primary" onclick="wpseoRemoveNotification( this );">%s</button>',
+			esc_html__( 'Ok', 'wordpress-seo-premium' )
+		);
+
+		$message .= sprintf(
+			'<span id="delete-link"><a class="delete" href="" onclick=\'%1$s\'>%2$s</a></span>',
+			$this->javascript_undo_redirect( $redirect, $id ),
+			esc_html__( 'Undo', 'wordpress-seo-premium' )
 		);
 
 		// Only set notification when the slug change was not saved through quick edit.
@@ -231,8 +241,8 @@ abstract class WPSEO_Watcher {
 	protected function get_delete_action_list( $url, $id ) {
 		return sprintf(
 			'<ul>%1$s %2$s</ul>',
-			'<li><button type="button" class="button" onclick=\'' . $this->javascript_create_redirect( $url, $id, WPSEO_Redirect::PERMANENT ) . '\'>' . __( 'Redirect it to another URL', 'wordpress-seo-premium' ) . '</button></li>',
-			'<li><button type="button" class="button" onclick=\'' . $this->javascript_create_redirect( $url, $id, WPSEO_Redirect::DELETED ) . '\'>' . __( 'Make it serve a 410 Content Deleted header', 'wordpress-seo-premium' ) . '</button></li>'
+			'<li><button type="button" class="button" onclick=\'' . $this->javascript_create_redirect( $url, $id, WPSEO_Redirect_Types::PERMANENT ) . '\'>' . __( 'Redirect it to another URL', 'wordpress-seo-premium' ) . '</button></li>',
+			'<li><button type="button" class="button" onclick=\'' . $this->javascript_create_redirect( $url, $id, WPSEO_Redirect_Types::DELETED ) . '\'>' . __( 'Make it serve a 410 Content Deleted header', 'wordpress-seo-premium' ) . '</button></li>'
 		);
 	}
 

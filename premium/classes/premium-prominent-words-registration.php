@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Admin
  */
 
@@ -14,7 +16,19 @@ class WPSEO_Premium_Prominent_Words_Registration implements WPSEO_WordPress_Inte
 	 * {@inheritdoc}
 	 */
 	public function register_hooks() {
-		add_action( 'init', array( $this, 'register' ), 0 );
+		add_action( 'init', array( $this, 'register' ), 20 );
+		add_action( 'admin_init', array( $this, 'unregister' ) );
+	}
+
+	/**
+	 * Removes the taxonomy from the registration.
+	 *
+	 * This makes sure that no unneeded queries are done relating these private terms.
+	 */
+	public function unregister() {
+		if ( ! $this->is_visible() ) {
+			unregister_taxonomy( self::TERM_NAME );
+		}
 	}
 
 	/**
@@ -24,7 +38,14 @@ class WPSEO_Premium_Prominent_Words_Registration implements WPSEO_WordPress_Inte
 		$prominent_words_support    = new WPSEO_Premium_Prominent_Words_Support();
 		$prominent_words_post_types = $prominent_words_support->get_supported_post_types();
 
-		register_taxonomy( self::TERM_NAME, $prominent_words_post_types, $this->get_args() );
+		if ( $prominent_words_post_types === array() ) {
+			return;
+		}
+
+		// REST API expects a numbered list of post types.
+		$post_types = array_values( $prominent_words_post_types );
+
+		register_taxonomy( self::TERM_NAME, $post_types, $this->get_args() );
 	}
 
 	/**
@@ -61,22 +82,25 @@ class WPSEO_Premium_Prominent_Words_Registration implements WPSEO_WordPress_Inte
 	 * @return array The arguments for the registration to WordPress.
 	 */
 	private function get_args() {
-		$args = array(
+		return array(
 			'labels'                     => $this->get_labels(),
 			'hierarchical'               => false,
 			'public'                     => false,
-			'show_ui'                    => false,
+			'show_ui'                    => $this->is_visible(),
 			'show_admin_column'          => false,
 			'show_in_nav_menus'          => false,
 			'show_tagcloud'              => false,
 			'show_in_rest'               => true,
 			'capabilities'               => array( 'edit_terms' => 'edit_posts' ),
 		);
+	}
 
-		if ( defined( 'WPSEO_DEBUG' ) && WPSEO_DEBUG ) {
-			$args['show_ui'] = true;
-		}
-
-		return $args;
+	/**
+	 * Determines if the prominent words should be visible in the menu.
+	 *
+	 * @return bool True if the prominent words should be shown.
+	 */
+	private function is_visible() {
+		return ( defined( 'WPSEO_DEBUG' ) && WPSEO_DEBUG );
 	}
 }

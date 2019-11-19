@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Views
  */
 
@@ -20,7 +22,11 @@
 
 	<?php
 	if ( ! empty( $tab_presenter ) ) :
-		$tab_presenter->display();
+		$tab_presenter->display(
+			array(
+				'nonce' => wp_create_nonce( 'wpseo-redirects-ajax-security' ),
+			)
+		);
 	endif;
 	?>
 

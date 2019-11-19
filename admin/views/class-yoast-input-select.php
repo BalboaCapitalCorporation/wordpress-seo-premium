@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin
  */
 
@@ -9,27 +11,37 @@
 class Yoast_Input_Select {
 
 	/**
+	 * The id attribute value.
+	 *
 	 * @var string
 	 */
 	private $select_id;
 
 	/**
+	 * The name attribute value.
+	 *
 	 * @var string
 	 */
 	private $select_name;
 
 	/**
+	 * Additional select attributes.
+	 *
 	 * @var array
 	 */
 	private $select_attributes = array();
 
 	/**
-	 * @var array Array with the options to parse.
+	 * Array with the options to parse.
+	 *
+	 * @var array
 	 */
 	private $select_options;
 
 	/**
-	 * @var string The current selected option.
+	 * The current selected option.
+	 *
+	 * @var string
 	 */
 	private $selected_option;
 
@@ -59,7 +71,7 @@ class Yoast_Input_Select {
 	}
 
 	/**
-	 * Return the rendered view
+	 * Return the rendered view.
 	 *
 	 * @return string
 	 */
@@ -75,7 +87,7 @@ class Yoast_Input_Select {
 	}
 
 	/**
-	 * Add an attribute to the attributes property
+	 * Add an attribute to the attributes property.
 	 *
 	 * @param string $attribute The name of the attribute to add.
 	 * @param string $value     The value of the attribute.
@@ -85,7 +97,7 @@ class Yoast_Input_Select {
 	}
 
 	/**
-	 * Return the set fields for the select
+	 * Return the set fields for the select.
 	 *
 	 * @return array
 	 */
@@ -122,7 +134,7 @@ class Yoast_Input_Select {
 	 * @param string $value     The value of the attribute.
 	 * @param string $attribute The attribute to look for.
 	 */
-	private function parse_attribute( & $value, $attribute ) {
-		$value = sprintf( '%s="%s"', esc_html( $attribute ), esc_attr( $value ) );
+	private function parse_attribute( &$value, $attribute ) {
+		$value = sprintf( '%s="%s"', sanitize_key( $attribute ), esc_attr( $value ) );
 	}
 }

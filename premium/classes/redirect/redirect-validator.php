@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes\Redirect
  */
 
@@ -9,13 +11,20 @@
 class WPSEO_Redirect_Validator {
 
 	/**
+	 * List containing all possible validation rules.
+	 *
 	 * @var array
 	 */
 	protected $validation_rules = array(
+		'relative-origin' => array(
+			'validation_class' => 'WPSEO_Redirect_Relative_Origin_Validation',
+			'exclude_types'    => array(),
+			'exclude_format'   => array( WPSEO_Redirect_Formats::REGEX ),
+		),
 		'self-redirect' => array(
 			'validation_class' => 'WPSEO_Redirect_Self_Redirect_Validation',
 			'exclude_types'    => array(),
-			'exclude_format'   => array( WPSEO_Redirect::FORMAT_REGEX ),
+			'exclude_format'   => array( WPSEO_Redirect_Formats::REGEX ),
 		),
 		'uniqueness' => array(
 			'validation_class' => 'WPSEO_Redirect_Uniqueness_Validation',
@@ -34,23 +43,25 @@ class WPSEO_Redirect_Validator {
 		),
 		'accessible' => array(
 			'validation_class' => 'WPSEO_Redirect_Accessible_Validation',
-			'exclude_types'    => array( WPSEO_Redirect::DELETED, WPSEO_Redirect::UNAVAILABLE ),
-			'exclude_format'   => array( WPSEO_Redirect::FORMAT_REGEX ),
+			'exclude_types'    => array( WPSEO_Redirect_Types::DELETED, WPSEO_Redirect_Types::UNAVAILABLE ),
+			'exclude_format'   => array( WPSEO_Redirect_Formats::REGEX ),
 		),
 		'endpoint' => array(
 			'validation_class' => 'WPSEO_Redirect_Endpoint_Validation',
-			'exclude_types'    => array( WPSEO_Redirect::DELETED, WPSEO_Redirect::UNAVAILABLE ),
-			'exclude_format'   => array( WPSEO_Redirect::FORMAT_REGEX ),
+			'exclude_types'    => array( WPSEO_Redirect_Types::DELETED, WPSEO_Redirect_Types::UNAVAILABLE ),
+			'exclude_format'   => array( WPSEO_Redirect_Formats::REGEX ),
 		),
 	);
 
 	/**
+	 * A string holding a possible redirect validation error.
+	 *
 	 * @var bool|string The validation error.
 	 */
 	protected $validation_error = false;
 
 	/**
-	 * Validates the old and the new URL
+	 * Validates the old and the new URL.
 	 *
 	 * @param WPSEO_Redirect $redirect         The redirect that will be saved.
 	 * @param WPSEO_Redirect $current_redirect Redirect that will be used for comparison.
@@ -75,7 +86,7 @@ class WPSEO_Redirect_Validator {
 	}
 
 	/**
-	 * Returns the validation error
+	 * Returns the validation error.
 	 *
 	 * @return WPSEO_Validation_Result
 	 */
@@ -84,12 +95,12 @@ class WPSEO_Redirect_Validator {
 	}
 
 	/**
-	 * Removes a rule from the validations
+	 * Removes a rule from the validations.
 	 *
 	 * @param array  $validations    Array with the validations.
 	 * @param string $rule_to_remove The rule that will be removed.
 	 */
-	protected function remove_rule( & $validations, $rule_to_remove ) {
+	protected function remove_rule( &$validations, $rule_to_remove ) {
 		if ( array_key_exists( $rule_to_remove, $validations ) ) {
 			unset( $validations[ $rule_to_remove ] );
 		}
@@ -117,7 +128,6 @@ class WPSEO_Redirect_Validator {
 	}
 
 	/**
-	 *
 	 * Getting the validations based on the set validation rules.
 	 *
 	 * @param array $validation_rules The rules for the validations that will be run.
@@ -134,7 +144,7 @@ class WPSEO_Redirect_Validator {
 	}
 
 	/**
-	 * Fill the redirect property
+	 * Fill the redirect property.
 	 *
 	 * @param string $format The format for the redirects.
 	 *

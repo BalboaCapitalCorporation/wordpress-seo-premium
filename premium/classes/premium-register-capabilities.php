@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Admin\Capabilities
  */
 
@@ -7,6 +9,7 @@
  * Capabilities registration class.
  */
 class WPSEO_Premium_Register_Capabilities implements WPSEO_WordPress_Integration {
+
 	/**
 	 * Registers the hooks.
 	 *

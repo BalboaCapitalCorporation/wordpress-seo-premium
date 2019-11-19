@@ -1,23 +1,27 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
 /**
- * Class WPSEO_Redirect_Manager
+ * Class WPSEO_Redirect_Manager.
  */
 class WPSEO_Redirect_Upgrade {
 
 	/**
+	 * Lookup table for previous redirect format constants to their current counterparts.
+	 *
 	 * @var array
 	 */
 	private static $redirect_option_names = array(
-		WPSEO_Redirect_Option::OLD_OPTION_PLAIN => WPSEO_Redirect::FORMAT_PLAIN,
-		WPSEO_Redirect_Option::OLD_OPTION_REGEX => WPSEO_Redirect::FORMAT_REGEX,
+		WPSEO_Redirect_Option::OLD_OPTION_PLAIN => WPSEO_Redirect_Formats::PLAIN,
+		WPSEO_Redirect_Option::OLD_OPTION_REGEX => WPSEO_Redirect_Formats::REGEX,
 	);
 
 	/**
-	 * Upgrade routine from Yoast SEO premium 1.2.0
+	 * Upgrade routine from Yoast SEO premium 1.2.0.
 	 */
 	public static function upgrade_1_2_0() {
 		$redirect_option = self::get_redirect_option();
@@ -38,11 +42,12 @@ class WPSEO_Redirect_Upgrade {
 	}
 
 	/**
-	 * Check if redirects should be imported from the free version
+	 * Check if redirects should be imported from the free version.
 	 *
 	 * @since 2.3
 	 */
 	public static function import_redirects_2_3() {
+		// phpcs:ignore WordPress.DB.SlowDBQuery -- Upgrade routine, so rarely used, therefore not an issue.
 		$wp_query = new WP_Query( 'post_type=any&meta_key=_yoast_wpseo_redirect&order=ASC' );
 
 		if ( ! empty( $wp_query->posts ) ) {
@@ -54,7 +59,7 @@ class WPSEO_Redirect_Upgrade {
 				$new_url = get_post_meta( $post->ID, '_yoast_wpseo_redirect', true );
 
 				// Create redirect.
-				$redirects[] = new WPSEO_Redirect( $old_url, $new_url, 301, WPSEO_Redirect::FORMAT_PLAIN );
+				$redirects[] = new WPSEO_Redirect( $old_url, $new_url, 301, WPSEO_Redirect_Formats::PLAIN );
 
 				// Remove post meta value.
 				delete_post_meta( $post->ID, '_yoast_wpseo_redirect' );
@@ -63,7 +68,6 @@ class WPSEO_Redirect_Upgrade {
 			self::import_redirects( $redirects );
 		}
 	}
-
 
 	/**
 	 * Upgrade routine to merge plain and regex redirects in a single option.

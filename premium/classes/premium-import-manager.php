@@ -1,31 +1,30 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
 /**
  * Class WPSEO_Premium_Import_Manager
  */
-class WPSEO_Premium_Import_Manager {
+class WPSEO_Premium_Import_Manager implements WPSEO_WordPress_Integration {
 
 	/**
-	 * Indicates whether redirects where imported
+	 * Holds the import object.
 	 *
-	 * @var bool
+	 * @var stdClass
 	 */
-	private $redirects_imported = false;
+	protected $import;
 
 	/**
-	 * Holds the import object
+	 * Registers the hooks.
 	 *
-	 * @var object
+	 * @codeCoverageIgnore
+	 *
+	 * @return void
 	 */
-	private $import;
-
-	/**
-	 * Constructor.
-	 */
-	public function __construct() {
+	public function register_hooks() {
 		// Handle premium imports.
 		add_filter( 'wpseo_handle_import', array( $this, 'do_premium_imports' ) );
 
@@ -37,26 +36,31 @@ class WPSEO_Premium_Import_Manager {
 	/**
 	 * Imports redirects from specified file or location.
 	 *
-	 * @param object|bool $import The import object.
+	 * @param stdClass|bool $import The import object.
 	 *
-	 * @return object
+	 * @return stdClass The import status object.
 	 */
 	public function do_premium_imports( $import ) {
 		if ( ! $import ) {
 			$import = (object) array(
 				'msg'     => '',
 				'success' => false,
+				'status'  => null,
 			);
 		}
+
 		$this->import = $import;
 		$this->htaccess_import();
 		$this->do_plugin_imports();
 		$this->do_csv_imports();
+
 		return $this->import;
 	}
 
 	/**
 	 * Outputs a tab header for the htaccess import block.
+	 *
+	 * @return void
 	 */
 	public function redirects_import_header() {
 		/* translators: %s: '.htaccess' file name */
@@ -65,61 +69,14 @@ class WPSEO_Premium_Import_Manager {
 
 	/**
 	 * Adding the import block for redirects.
+	 *
+	 * @return void
 	 */
 	public function add_redirect_import_block() {
-		// The plugins we have import functions for.
-		$plugins = array(
-			'redirection'           => __( 'Redirection', 'wordpress-seo-premium' ) . '<br/>',
-			'safe_redirect_manager' => __( 'Safe Redirect Manager', 'wordpress-seo-premium' ) . '<br/>',
-			'simple-301-redirects'  => __( 'Simple 301 Redirects', 'wordpress-seo-premium' ) . '<br/>',
-		);
+		$import = $this->import;
 
 		// Display the forms.
 		require WPSEO_PREMIUM_PATH . 'classes/views/import-redirects.php';
-	}
-
-	/**
-	 * Redirection import success message.
-	 */
-	private function message_redirect_import_success() {
-		$this->import->msg .= __( 'Redirects have been imported.', 'wordpress-seo-premium' );
-	}
-
-	/**
-	 * Redirection plugin not found message.
-	 */
-	private function message_redirection_plugin_not_find() {
-		$this->import->msg .= __( 'Redirect import failed: Redirection plugin not installed or activated.', 'wordpress-seo-premium' );
-	}
-
-	/**
-	 * Redirection import no redirects found message.
-	 */
-	private function message_redirect_import_no_redirects() {
-		$this->import->msg .= __( 'Redirect import failed: No redirects found.', 'wordpress-seo-premium' );
-	}
-
-	/**
-	 * Apache import success message.
-	 */
-	private function message_htaccess_success() {
-		/* translators: %s: '.htaccess' file name */
-		$this->import->msg .= sprintf( __( '%s redirects have been imported.', 'wordpress-seo-premium' ), '<code>.htaccess</code>' );
-	}
-
-	/**
-	 * Apache import no redirects found message.
-	 */
-	private function message_htaccess_no_redirects() {
-		/* translators: %s: '.htaccess' file name */
-		$this->import->msg .= sprintf( __( '%s import failed: No redirects found.', 'wordpress-seo-premium' ), '<code>.htaccess</code>' );
-	}
-
-	/**
-	 * CSV import invalid file message.
-	 */
-	protected function message_csv_file_invalid() {
-		$this->import->msg .= __( 'CSV import failed: The provided file could not be parsed using a CSV parser.', 'wordpress-seo-premium' );
 	}
 
 	/**
@@ -127,54 +84,151 @@ class WPSEO_Premium_Import_Manager {
 	 *
 	 * @return void
 	 */
-	private function htaccess_import() {
-		$htaccess = stripcslashes( filter_input( INPUT_POST, 'htaccess' ) );
+	protected function htaccess_import() {
+		$htaccess = $this->get_posted_htaccess();
 
 		if ( ! $htaccess || $htaccess === '' ) {
 			return;
 		}
 
-		$loader = new WPSEO_Redirect_HTAccess_Loader( $htaccess );
+		try {
+			$loader = new WPSEO_Redirect_HTAccess_Loader( $htaccess );
+			$result = $this->import_redirects_from_loader( $loader );
 
-		if ( $this->import_redirects_from_loader( $loader ) ) {
-			$this->message_htaccess_success();
-			return;
+			$this->set_import_success( $result );
 		}
-
-		$this->message_htaccess_no_redirects();
+		catch ( WPSEO_Redirect_Import_Exception $e ) {
+			$this->set_import_message( $e->getMessage() );
+		}
 	}
 
 	/**
 	 * Handles plugin imports.
+	 *
+	 * @return void
 	 */
-	private function do_plugin_imports() {
-		$wpseo_post = filter_input( INPUT_POST, 'wpseo', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY );
+	protected function do_plugin_imports() {
+		$import_plugin = $this->get_posted_import_plugin();
 
-		if ( ! isset( $wpseo_post['import_plugin'] ) ) {
+		if ( ! $import_plugin ) {
 			return;
 		}
 
-		$loader = $this->get_plugin_loader( $wpseo_post['import_plugin'] );
+		try {
+			$loader = $this->get_plugin_loader( $import_plugin );
+			$result = $this->import_redirects_from_loader( $loader );
 
-		if ( $loader === false ) {
-			$this->message_redirection_plugin_not_find();
+			$this->set_import_success( $result );
+		}
+		catch ( WPSEO_Redirect_Import_Exception $e ) {
+			$this->set_import_message( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Processes a CSV import.
+	 *
+	 * @return void
+	 */
+	protected function do_csv_imports() {
+		$redirects_csv_file = $this->get_posted_csv_file();
+
+		if ( ! $redirects_csv_file ) {
 			return;
 		}
 
-		if ( $this->import_redirects_from_loader( $loader ) ) {
-			$this->message_redirect_import_success();
-			return;
+		try {
+			$this->validate_uploaded_csv_file( $redirects_csv_file );
+
+			// Load the redirects from the uploaded file.
+			$loader = new WPSEO_Redirect_CSV_Loader( $redirects_csv_file['tmp_name'] );
+			$result = $this->import_redirects_from_loader( $loader );
+
+			$this->set_import_success( $result );
+		}
+		catch ( WPSEO_Redirect_Import_Exception $e ) {
+			$this->set_import_message( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Sets the import message.
+	 *
+	 * @param string $import_message The message.
+	 *
+	 * @return void
+	 */
+	protected function set_import_message( $import_message ) {
+		$this->import->msg .= $import_message;
+	}
+
+	/**
+	 * Sets the import success state to true.
+	 *
+	 * @param array $result The import result.
+	 *
+	 * @return void.
+	 */
+	protected function set_import_success( array $result ) {
+		$this->import->success = true;
+
+		$this->set_import_message(
+			$this->get_success_message( $result['total_imported'], $result['total_redirects'] )
+		);
+	}
+
+	/**
+	 * Retrieves the success message when import has been successful.
+	 *
+	 * @param int $total_imported  The number of imported redirects.
+	 * @param int $total_redirects The total amount of redirects.
+	 *
+	 * @return string The generated message.
+	 */
+	protected function get_success_message( $total_imported, $total_redirects ) {
+		if ( $total_imported === $total_redirects ) {
+			return sprintf(
+				/* translators: 1: link to redirects overview, 2: closing link tag */
+				__( 'All redirects have been imported successfully. Go to the %1$sredirects overview%2$s to see the imported redirects.', 'wordpress-seo-premium' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wpseo_redirects' ) ) . '">',
+				'</a>'
+			);
 		}
 
-		$this->message_redirect_import_no_redirects();
+		if ( $total_imported === 0 ) {
+			return sprintf(
+				/* translators: 1: link to redirects overview, 2: closing link tag */
+				__( 'No redirects have been imported. Probably they already exist as a redirect. Go to the %1$sredirects overview%2$s to see the existing redirects.', 'wordpress-seo-premium' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wpseo_redirects' ) ) . '">',
+				'</a>'
+			);
+		}
+
+		return sprintf(
+			/* translators: 1: amount of imported redirects, 2: total amount of redirects, 3: link to redirects overview, 4: closing link tag */
+			_n(
+				'Imported %1$s/%2$s redirects successfully. Go to the %3$sredirects overview%4$s to see the imported redirect.',
+				'Imported %1$s/%2$s redirects successfully. Go to the %3$sredirects overview%4$s to see the imported redirects.',
+				$total_imported,
+				'wordpress-seo-premium'
+			),
+			$total_imported,
+			$total_redirects,
+			'<a href="' . esc_url( admin_url( 'admin.php?page=wpseo_redirects' ) ) . '">',
+			'</a>'
+		);
 	}
 
 	/**
 	 * Returns a loader for the given plugin.
 	 *
+	 * @codeCoverageIgnore
+	 *
 	 * @param string $plugin_name The plugin we want to load redirects from.
 	 *
 	 * @return bool|WPSEO_Redirect_Abstract_Loader The redirect loader.
+	 *
+	 * @throws WPSEO_Redirect_Import_Exception When the plugin is not installed or activated.
 	 */
 	protected function get_plugin_loader( $plugin_name ) {
 		global $wpdb;
@@ -183,7 +237,9 @@ class WPSEO_Premium_Import_Manager {
 			case 'redirection':
 				// Only do import if Redirections is active.
 				if ( ! defined( 'REDIRECTION_VERSION' ) ) {
-					return false;
+					throw new WPSEO_Redirect_Import_Exception(
+						__( 'Redirect import failed: the Redirection plugin is not installed or activated.', 'wordpress-seo-premium' )
+					);
 				}
 				return new WPSEO_Redirect_Redirection_Loader( $wpdb );
 			case 'safe_redirect_manager':
@@ -191,32 +247,10 @@ class WPSEO_Premium_Import_Manager {
 			case 'simple-301-redirects':
 				return new WPSEO_Redirect_Simple_301_Redirect_Loader();
 			default:
-				return false;
+				throw new WPSEO_Redirect_Import_Exception(
+					__( 'Redirect import failed: the selected redirect plugin is not installed or activated.', 'wordpress-seo-premium' )
+				);
 		}
-	}
-
-	/**
-	 * Processes a CSV import.
-	 */
-	protected function do_csv_imports() {
-		if ( ! isset( $_FILES['redirects_csv_file'] ) ) {
-			return;
-		}
-
-		if ( ! $this->validate_uploaded_csv_file( $_FILES['redirects_csv_file'] ) ) {
-			$this->message_csv_file_invalid();
-			return;
-		}
-
-		// Load the redirects from the uploaded file.
-		$loader = new WPSEO_Redirect_CSV_Loader( $_FILES['redirects_csv_file']['tmp_name'] );
-
-		if ( $this->import_redirects_from_loader( $loader ) ) {
-			$this->message_redirect_import_success();
-			return;
-		}
-
-		$this->message_redirect_import_no_redirects();
 	}
 
 	/**
@@ -224,50 +258,110 @@ class WPSEO_Premium_Import_Manager {
 	 *
 	 * @param array $csv_file The file to upload, from the $_FILES object.
 	 *
-	 * @return bool Whether or not the file passes the validation.
+	 * @throws WPSEO_Redirect_Import_Exception When the given file is invalid.
+	 *
+	 * @return void
 	 */
 	protected function validate_uploaded_csv_file( $csv_file ) {
-		// If the file upload failed for any reason.
-		if ( ! isset( $csv_file['error'] ) || ! $csv_file['error'] === UPLOAD_ERR_OK ) {
-			return false;
+
+		// If no file is selected.
+		if ( array_key_exists( 'name', $csv_file ) && $csv_file['name'] === '' ) {
+			$error_message = __( 'CSV import failed: No file selected.', 'wordpress-seo-premium' );
+			throw new WPSEO_Redirect_Import_Exception( $error_message );
+		}
+
+		// If the file upload failed for any other reason.
+		if ( array_key_exists( 'error', $csv_file ) && $csv_file['error'] !== UPLOAD_ERR_OK ) {
+			$error_message = __( 'CSV import failed: the provided file could not be parsed using a CSV parser.', 'wordpress-seo-premium' );
+			throw new WPSEO_Redirect_Import_Exception( $error_message );
 		}
 
 		// If somehow the file is larger than it should be.
 		if ( $csv_file['size'] > wp_max_upload_size() ) {
-			return false;
+			$max_size_formatted = size_format( wp_max_upload_size() );
+			/* translators: 1: The maximum file size */
+			$error_message = sprintf( __( 'CSV import failed: the provided file is larger than %1$s.', 'wordpress-seo-premium' ), $max_size_formatted );
+			throw new WPSEO_Redirect_Import_Exception( $error_message );
 		}
 
-		// If it's not a CSV file.
-		$filetype = wp_check_filetype( $csv_file['name'] );
-		if ( $filetype['ext'] !== 'csv' ) {
-			return false;
+		// If it's not a CSV file (send the csv mimetype along for multisite installations).
+		$filetype = wp_check_filetype( $csv_file['name'], array( 'csv' => 'text/csv' ) );
+		if ( strtolower( $filetype['ext'] ) !== 'csv' ) {
+			$error_message = __( 'CSV import failed: the provided file is not a CSV file.', 'wordpress-seo-premium' );
+			throw new WPSEO_Redirect_Import_Exception( $error_message );
 		}
-
-		return true;
 	}
 
 	/**
 	 * Imports all redirects from the loader.
 	 *
-	 * @param WPSEO_Redirect_Abstract_Loader $loader The loader to import redirects from.
+	 * @codeCoverageIgnore
 	 *
-	 * @return bool Whether or not any redirects were imported.
+	 * @param WPSEO_Redirect_Loader $loader The loader to import redirects from.
+	 *
+	 * @return array The result of the import.
+	 *
+	 * @throws WPSEO_Redirect_Import_Exception When there is no loader given or when there are no redirects.
 	 */
-	protected function import_redirects_from_loader( WPSEO_Redirect_Abstract_Loader $loader ) {
+	protected function import_redirects_from_loader( WPSEO_Redirect_Loader $loader ) {
 		if ( ! $loader ) {
-			return false;
+			throw new WPSEO_Redirect_Import_Exception(
+				__( 'Redirect import failed: we can\'t recognize this type of import.', 'wordpress-seo-premium' )
+			);
 		}
 
 		$redirects = $loader->load();
 
 		if ( count( $redirects ) === 0 ) {
-			return false;
+			throw new WPSEO_Redirect_Import_Exception(
+				__( 'Redirect import failed: no redirects found.', 'wordpress-seo-premium' )
+			);
 		}
 
 		$importer = new WPSEO_Redirect_Importer();
-		$importer->import( $redirects );
+		return $importer->import( $redirects );
+	}
 
-		$this->import->success = true;
-		return true;
+	/**
+	 * Retrieves the posted htaccess.
+	 *
+	 * @codeCoverageIgnore
+	 *
+	 * @return string The posted htaccess.
+	 */
+	protected function get_posted_htaccess() {
+		return stripcslashes( filter_input( INPUT_POST, 'htaccess' ) );
+	}
+
+	/**
+	 * Retrieves the posted import plugin.
+	 *
+	 * @codeCoverageIgnore
+	 *
+	 * @return null|string The posted import plugin.
+	 */
+	protected function get_posted_import_plugin() {
+		$wpseo_post = filter_input( INPUT_POST, 'wpseo', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY );
+
+		if ( ! isset( $wpseo_post['import_plugin'] ) ) {
+			return null;
+		}
+
+		return $wpseo_post['import_plugin'];
+	}
+
+	/**
+	 * Retrieves the posted CSV file.
+	 *
+	 * @codeCoverageIgnore
+	 *
+	 * @return null|array The posted CSV file.
+	 */
+	protected function get_posted_csv_file() {
+		if ( ! isset( $_FILES['redirects_csv_file'] ) ) {
+			return null;
+		}
+
+		return $_FILES['redirects_csv_file'];
 	}
 }

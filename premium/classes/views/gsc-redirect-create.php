@@ -1,13 +1,19 @@
 <?php
 /**
- * @package WPSEO\Admin|Google_Search_Console
+ * WPSEO Premium plugin file.
  *
  * This is the view for the modal box that appears when the url can be added as a redirect.
+ *
+ * @package WPSEO\Admin|Google_Search_Console
  */
 
 /**
- * @var string $url Redirect for URL.
+ * The old URL that redirects to the new URL.
+ *
+ * @var string $url
  */
+
+_deprecated_file( __FILE__, 'WPSEO 12.5' );
 
 $unique_id      = md5( $url );
 $redirect_types = new WPSEO_Redirect_Types();
@@ -30,8 +36,9 @@ $wpseo_i18n_fixed_in_gsc = sprintf(
 		<select name='redirect-type' id='<?php echo esc_attr( 'wpseo-redirect-type-' . $unique_id ); ?>' class='select'>
 			<?php
 			// Loop through the redirect types.
-			foreach ( $redirect_types->get() as $type => $desc ) {
-				echo '<option value="' . esc_attr( $type ) . '">' . esc_html( $desc ) . '</option>' . "\n";
+			foreach ( $redirect_types->get() as $yoast_premium_redirect_type => $yoast_premium_redirect_desc ) {
+				echo '<option value="' . esc_attr( $yoast_premium_redirect_type ) . '">'
+					. esc_html( $yoast_premium_redirect_desc ) . '</option>' . "\n";
 			}
 			?>
 		</select>

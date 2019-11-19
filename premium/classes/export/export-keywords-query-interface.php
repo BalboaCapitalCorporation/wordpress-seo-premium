@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes\Export
  */
 
@@ -9,6 +11,7 @@
  * Creates a SQL query to gather all data for a keywords export.
  */
 interface WPSEO_Export_Keywords_Query {
+
 	/**
 	 * Returns the page size for the query.
 	 *

@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
@@ -23,17 +25,11 @@ class WPSEO_Metabox_Link_Suggestions implements WPSEO_WordPress_Integration {
 	 * @return false|array Either an array of cached suggestions or false.
 	 */
 	public function get_js_data() {
-		// @codingStandardsIgnoreStart
 		global $post_ID;
 
-		$post_id = $post_ID;
-		// @codingStandardsIgnoreEnd
-
-		$service = new WPSEO_Premium_Link_Suggestions_Service();
-
-		$prominent_words = get_the_terms( $post_id, WPSEO_Premium_Prominent_Words_Registration::TERM_NAME );
-
-		if ( false === $prominent_words ) {
+		$service         = new WPSEO_Premium_Link_Suggestions_Service();
+		$prominent_words = get_the_terms( $post_ID, WPSEO_Premium_Prominent_Words_Registration::TERM_NAME );
+		if ( false === $prominent_words || is_wp_error( $prominent_words ) ) {
 			return false;
 		}
 
@@ -97,8 +93,7 @@ class WPSEO_Metabox_Link_Suggestions implements WPSEO_WordPress_Integration {
 	 * @return bool Whether or not the link suggestions are enabled.
 	 */
 	public function is_enabled() {
-		$options = WPSEO_Options::get_option( 'wpseo' );
-		return ( isset( $options['enable_link_suggestions'] ) && $options['enable_link_suggestions'] );
+		return WPSEO_Options::get( 'enable_link_suggestions', false );
 	}
 
 	/**
@@ -124,7 +119,7 @@ class WPSEO_Metabox_Link_Suggestions implements WPSEO_WordPress_Integration {
 
 		$language_support = new WPSEO_Premium_Prominent_Words_Language_Support();
 
-		if ( ! $language_support->is_language_supported( WPSEO_Utils::get_language( get_locale() ) ) ) {
+		if ( ! $language_support->is_language_supported( WPSEO_Language_Utils::get_language( get_locale() ) ) ) {
 			return;
 		}
 
@@ -142,7 +137,10 @@ class WPSEO_Metabox_Link_Suggestions implements WPSEO_WordPress_Integration {
 			array( $this, 'render_metabox_content' ),
 			$post_type,
 			'side',
-			'low'
+			'low',
+			array(
+				'__block_editor_compatible_meta_box' => true,
+			)
 		);
 	}
 }

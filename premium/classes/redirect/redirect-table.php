@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
@@ -13,23 +15,33 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 class WPSEO_Redirect_Table extends WP_List_Table {
 
 	/**
+	 * List of all redirects.
+	 *
 	 * @var WPSEO_Redirect[]
 	 */
 	public $items;
 
-	/** @var array */
+	/**
+	 * List containing redirect filter parameters.
+	 *
+	 * @var array
+	 */
 	private $filter = array(
 		'redirect_type' => null,
 		'search_string' => null,
 	);
 
 	/**
-	 * @var string The name of the first column.
+	 * The name of the first column.
+	 *
+	 * @var string
 	 */
 	private $current_column;
 
 	/**
-	 * @var string The primary column.
+	 * The primary column.
+	 *
+	 * @var string
 	 */
 	private $primary_column = 'type';
 
@@ -76,7 +88,8 @@ class WPSEO_Redirect_Table extends WP_List_Table {
 				$redirect_types = new WPSEO_Redirect_Types();
 
 				foreach ( $redirect_types->get() as $http_code => $redirect_type ) {
-					printf( "<option %s value='%s'>%s</option>\n",
+					printf(
+						"<option %s value='%s'>%s</option>\n",
 						selected( $selected, $http_code, false ),
 						esc_attr( $http_code ),
 						esc_html( $redirect_type )
@@ -141,15 +154,16 @@ class WPSEO_Redirect_Table extends WP_List_Table {
 		$this->_column_headers = array( $this->get_columns(), array(), $this->get_sortable_columns() );
 
 		// Get variables needed for pagination.
-		$per_page    = $this->get_items_per_page( 'redirects_per_page', 25 );
-		$total_items = count( $this->items );
-
-		// Set pagination.
-		$this->set_pagination_args( array(
+		$per_page        = $this->get_items_per_page( 'redirects_per_page', 25 );
+		$total_items     = count( $this->items );
+		$pagination_args = array(
 			'total_items' => $total_items,
 			'total_pages' => ceil( $total_items / $per_page ),
 			'per_page'    => $per_page,
-		) );
+		);
+
+		// Set pagination.
+		$this->set_pagination_args( $pagination_args );
 
 		$paged        = filter_input( INPUT_GET, 'paged' );
 		$current_page = (int) ( ( isset( $paged ) && $paged !== false ) ? $paged : 0 );
@@ -287,6 +301,7 @@ class WPSEO_Redirect_Table extends WP_List_Table {
 				return $item[ $column_name ];
 		}
 	}
+
 	/**
 	 * Returns the available bulk actions.
 	 *
@@ -390,7 +405,7 @@ class WPSEO_Redirect_Table extends WP_List_Table {
 	}
 
 	/**
-	 * The old column actions
+	 * The old column actions.
 	 *
 	 * @param string $column The column name to verify.
 	 *
@@ -406,6 +421,20 @@ class WPSEO_Redirect_Table extends WP_List_Table {
 			return $this->row_actions( $actions );
 		}
 
+		return '';
+	}
+
+	/**
+	 * Generates and display row actions links for the list table.
+	 *
+	 * We override the parent class method to avoid doubled buttons to be printed out.
+	 *
+	 * @param object $item        The item being acted upon.
+	 * @param string $column_name Current column name.
+	 * @param string $primary     Primary column name.
+	 * @return string Empty string.
+	 */
+	protected function handle_row_actions( $item, $column_name, $primary ) {
 		return '';
 	}
 }

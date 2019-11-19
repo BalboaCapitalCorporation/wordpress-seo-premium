@@ -1,20 +1,31 @@
 <?php
 /**
- * @package WPSEO\Admin|Google_Search_Console
+ * WPSEO Premium plugin file.
  *
  * This is the view for the modal box, when the url is already redirected.
+ *
+ * @package WPSEO\Admin|Google_Search_Console
+ */
+
+_deprecated_file( __FILE__, 'WPSEO 12.5' );
+
+/**
+ * Instance of the WPSEO_Redirect class, containing data about the existing redirect.
+ *
+ * @var WPSEO_Redirect $redirect
  */
 
 /**
- * @var WPSEO_Redirect $redirect  The existing redirect.
- * @var string         $url       Redirect for URL.
+ * The old URL that redirects to the new URL.
+ *
+ * @var string $url
  */
 ?>
 <h1 class="wpseo-redirect-url-title"><?php esc_html_e( 'Error: a redirect for this URL already exists', 'wordpress-seo-premium' ); ?></h1>
 <p>
 	<?php
 	// There is no target.
-	if ( in_array( $redirect->get_type(), array( WPSEO_Redirect::DELETED, WPSEO_Redirect::UNAVAILABLE ), true ) ) {
+	if ( in_array( $redirect->get_type(), array( WPSEO_Redirect_Types::DELETED, WPSEO_Redirect_Types::UNAVAILABLE ), true ) ) {
 		printf(
 			/* Translators: %1$s: expands to the current URL. */
 			esc_html__( 'You do not have to create a redirect for URL %1$s because a redirect already exists. If this is fine you can mark this issue as fixed. If not, please go to the redirects page and change the redirect.', 'wordpress-seo-premium' ),

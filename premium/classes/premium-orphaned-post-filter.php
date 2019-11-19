@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium
  */
 
@@ -7,7 +9,6 @@
  * Registers the filter for filtering posts by orphaned content.
  */
 class WPSEO_Premium_Orphaned_Post_Filter extends WPSEO_Abstract_Post_Filter {
-
 
 	/**
 	 * Returns the query value this filter uses.
@@ -22,7 +23,7 @@ class WPSEO_Premium_Orphaned_Post_Filter extends WPSEO_Abstract_Post_Filter {
 	 * Registers the hooks when the link feature is enabled.
 	 */
 	public function register_hooks() {
-		if ( ! WPSEO_Link_Table_Accessible::check_table_is_accessible() || ! WPSEO_Meta_Table_Accessible::check_table_is_accessible() ) {
+		if ( ! WPSEO_Link_Table_Accessible::is_accessible() || ! WPSEO_Meta_Table_Accessible::is_accessible() ) {
 			return;
 		}
 
@@ -66,7 +67,7 @@ class WPSEO_Premium_Orphaned_Post_Filter extends WPSEO_Abstract_Post_Filter {
 			return sprintf(
 				/* translators: %1$s expands to link to the recalculation option, %2$s: anchor closing, %3$s: plural form of the current post type, %4$s: a Learn more about link */
 				__( '%1$sClick here%2$s to index your links, so we can identify orphaned %3$s. %4$s', 'wordpress-seo-premium' ),
-				'<a href="' . esc_url( admin_url( 'admin.php?page=wpseo_dashboard&reIndexLinks=1' ) ) . '">',
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wpseo_tools&reIndexLinks=1' ) ) . '">',
 				'</a>',
 				strtolower( $post_type_object->labels->name ),
 				$learn_more
@@ -82,7 +83,7 @@ class WPSEO_Premium_Orphaned_Post_Filter extends WPSEO_Abstract_Post_Filter {
 	}
 
 	/**
-	 * Modifies the query based on the seo_filter variable in $_GET
+	 * Modifies the query based on the seo_filter variable in $_GET.
 	 *
 	 * @param string $where Query variables.
 	 *
@@ -91,6 +92,7 @@ class WPSEO_Premium_Orphaned_Post_Filter extends WPSEO_Abstract_Post_Filter {
 	public function filter_posts( $where ) {
 		if ( $this->is_filter_active() ) {
 			$where .= $this->get_where_filter();
+			$where .= $this->filter_published_posts();
 		}
 
 		return $where;
@@ -109,15 +111,19 @@ class WPSEO_Premium_Orphaned_Post_Filter extends WPSEO_Abstract_Post_Filter {
 			return 'AND 1 = 0';
 		}
 
-		$post_ids = WPSEO_Premium_Orphaned_Post_Query::get_orphaned_object_ids();
-		if ( empty( $post_ids ) ) {
-			return 'AND 1 = 0';
-		}
+		$subquery = WPSEO_Premium_Orphaned_Post_Query::get_orphaned_content_query();
+		return ' AND ' . $wpdb->posts . '.ID IN ( ' . $subquery . ' ) ';
+	}
 
-		return $wpdb->prepare(
-			' AND ' . $wpdb->posts . '.ID IN ( ' . implode( ',', array_fill( 0, count( $post_ids ), '%d' ) ) . ' ) ',
-			$post_ids
-		);
+	/**
+	 * Adds a published posts filter so we don't show unpublished posts in the orphaned pages results.
+	 *
+	 * @return string A published posts filter.
+	 */
+	protected function filter_published_posts() {
+		global $wpdb;
+
+		return " AND {$wpdb->posts}.post_status = 'publish' AND {$wpdb->posts}.post_password = ''";
 	}
 
 	/**
@@ -143,30 +149,30 @@ class WPSEO_Premium_Orphaned_Post_Filter extends WPSEO_Abstract_Post_Filter {
 	protected function get_post_total() {
 		global $wpdb;
 
+		static $count;
+
 		if ( WPSEO_Premium_Orphaned_Content_Utils::has_unprocessed_content() ) {
 			return '?';
 		}
 
-		$post_ids = WPSEO_Premium_Orphaned_Post_Query::get_orphaned_object_ids();
-		if ( empty( $post_ids ) ) {
-			return 0;
+		if ( $count === null ) {
+			$subquery = WPSEO_Premium_Orphaned_Post_Query::get_orphaned_content_query();
+			$count    = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(ID)
+						FROM `{$wpdb->posts}`
+						WHERE ID IN ( $subquery )
+							AND post_status = 'publish'
+							AND post_password = ''
+							AND post_type = %s",
+					$this->get_current_post_type()
+				)
+			);
+
+			$count = (int) $count;
 		}
 
-		$replacements   = $post_ids;
-		$replacements[] = $this->get_current_post_type();
-
-		$count = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(ID)
-					FROM `{$wpdb->posts}`
-					WHERE ID IN ( " . implode( ',', array_fill( 0, count( $post_ids ), '%d' ) ) . ' )
-					AND post_status = "publish"
-					AND post_type = %s',
-				$replacements
-			)
-		);
-
-		return (int) $count;
+		return $count;
 	}
 
 	/**

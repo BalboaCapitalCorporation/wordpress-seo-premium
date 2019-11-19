@@ -1,20 +1,26 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
 /**
- * Class WPSEO_Redirect_Ajax
+ * Class WPSEO_Redirect_Ajax.
  */
 class WPSEO_Redirect_Ajax {
 
 	/**
+	 * Instance of the WPSEO_Redirect_Manager instance.
+	 *
 	 * @var WPSEO_Redirect_Manager
 	 */
 	private $redirect_manager;
 
 	/**
-	 * @var string Format of the redirect, might be plain or regex.
+	 * Format of the redirect, might be plain or regex.
+	 *
+	 * @var string
 	 */
 	private $redirect_format;
 
@@ -31,7 +37,7 @@ class WPSEO_Redirect_Ajax {
 	}
 
 	/**
-	 * Function that handles the AJAX 'wpseo_add_redirect' action
+	 * Function that handles the AJAX 'wpseo_add_redirect' action.
 	 */
 	public function ajax_add_redirect() {
 		$this->valid_ajax_check();
@@ -63,11 +69,12 @@ class WPSEO_Redirect_Ajax {
 		}
 
 		// Response.
-		wp_die( wp_json_encode( $response ) );
+		// phpcs:ignore WordPress.Security.EscapeOutput -- WPCS bug/methods can't be whitelisted yet.
+		wp_die( WPSEO_Utils::format_json_encode( $response ) );
 	}
 
 	/**
-	 * Function that handles the AJAX 'wpseo_update_redirect' action
+	 * Function that handles the AJAX 'wpseo_update_redirect' action.
 	 */
 	public function ajax_update_redirect() {
 
@@ -96,31 +103,12 @@ class WPSEO_Redirect_Ajax {
 		}
 
 		// Response.
-		wp_die( wp_json_encode( $response ) );
+		// phpcs:ignore WordPress.Security.EscapeOutput -- WPCS bug/methods can't be whitelisted yet.
+		wp_die( WPSEO_Utils::format_json_encode( $response ) );
 	}
 
 	/**
-	 * Function that handles the AJAX 'wpseo_delete_redirect' action
-	 */
-	public function ajax_delete_redirect() {
-
-		$this->valid_ajax_check();
-
-		$response = array();
-
-		$current_redirect = $this->get_redirect_from_post( 'redirect' );
-
-		// Delete the redirect.
-		if ( ! empty( $current_redirect ) ) {
-			$this->redirect_manager->delete_redirects( array( $current_redirect ) );
-		}
-
-		// Response.
-		wp_die( wp_json_encode( $response ) );
-	}
-
-	/**
-	 * Run the validation
+	 * Run the validation.
 	 *
 	 * @param WPSEO_Redirect      $redirect         The redirect to save.
 	 * @param WPSEO_Redirect|null $current_redirect The current redirect.
@@ -138,13 +126,14 @@ class WPSEO_Redirect_Ajax {
 
 		if ( $error->get_type() === 'error' || ( $error->get_type() === 'warning' && $ignore_warning === 'false' ) ) {
 			wp_die(
-				wp_json_encode( array( 'error' => $error->to_array() ) )
+				// phpcs:ignore WordPress.Security.EscapeOutput -- WPCS bug/methods can't be whitelisted yet.
+				WPSEO_Utils::format_json_encode( array( 'error' => $error->to_array() ) )
 			);
 		}
 	}
 
 	/**
-	 * Setting the AJAX hooks
+	 * Setting the AJAX hooks.
 	 *
 	 * @param string $hook_suffix The piece that will be stitched after the hooknames.
 	 */
@@ -155,9 +144,6 @@ class WPSEO_Redirect_Ajax {
 		// Update an existing redirect.
 		add_action( 'wp_ajax_wpseo_update_redirect_' . $hook_suffix, array( $this, 'ajax_update_redirect' ) );
 
-		// Delete an existing redirect.
-		add_action( 'wp_ajax_wpseo_delete_redirect_' . $hook_suffix, array( $this, 'ajax_delete_redirect' ) );
-
 		// Add URL response code check AJAX.
 		if ( ! has_action( 'wp_ajax_wpseo_check_url' ) ) {
 			add_action( 'wp_ajax_wpseo_check_url', array( $this, 'ajax_check_url' ) );
@@ -165,7 +151,7 @@ class WPSEO_Redirect_Ajax {
 	}
 
 	/**
-	 * Check if the posted nonce is valid and if the user has the needed rights
+	 * Check if the posted nonce is valid and if the user has the needed rights.
 	 */
 	private function valid_ajax_check() {
 		// Check nonce.
@@ -175,7 +161,7 @@ class WPSEO_Redirect_Ajax {
 	}
 
 	/**
-	 * Checks whether the current user is allowed to do what he's doing
+	 * Checks whether the current user is allowed to do what he's doing.
 	 */
 	private function permission_check() {
 		if ( ! current_user_can( 'edit_posts' ) ) {
@@ -184,7 +170,7 @@ class WPSEO_Redirect_Ajax {
 	}
 
 	/**
-	 * Get the redirect from the post values
+	 * Get the redirect from the post values.
 	 *
 	 * @param string $post_value The key where the post values are located in the $_POST.
 	 *
@@ -202,7 +188,7 @@ class WPSEO_Redirect_Ajax {
 	}
 
 	/**
-	 * Sanitize the URL for displaying on the window
+	 * Sanitize the URL for displaying on the window.
 	 *
 	 * @param string $url The URL to sanitize.
 	 *
@@ -210,5 +196,20 @@ class WPSEO_Redirect_Ajax {
 	 */
 	private function sanitize_url( $url ) {
 		return trim( htmlspecialchars_decode( rawurldecode( $url ) ) );
+	}
+
+	/**
+	 * Function that handles the AJAX 'wpseo_delete_redirect' action.
+	 *
+	 * @deprecated 9.2
+	 * @codeCoverageIgnore
+	 *
+	 * @return void
+	 */
+	public function ajax_delete_redirect() {
+		_deprecated_function( __FUNCTION__, 'WPSEO 9.2.0', 'Replaced by the REST API.' );
+
+		// Response.
+		wp_die( 'Replaced by the REST API.' );
 	}
 }

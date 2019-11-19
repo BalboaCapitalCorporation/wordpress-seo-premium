@@ -1,13 +1,18 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
 /**
- * Helpers for redirects
+ * Helpers for redirects.
  */
 class WPSEO_Redirect_Util {
+
 	/**
+	 * Whether or not the permalink contains a trailing slash.
+	 *
 	 * @var bool
 	 */
 	public static $has_permalink_trailing_slash = null;
@@ -19,14 +24,13 @@ class WPSEO_Redirect_Util {
 	 * @return bool
 	 */
 	public static function is_relative_url( $url ) {
-		// @todo Replace with call to wp_parse_url() once minimum requirement has gone up to WP 4.7.
-		$url_scheme = parse_url( $url, PHP_URL_SCHEME );
+		$url_scheme = wp_parse_url( $url, PHP_URL_SCHEME );
 
 		return ! $url_scheme;
 	}
 
 	/**
-	 * Returns whether or not the permalink structure has a trailing slash
+	 * Returns whether or not the permalink structure has a trailing slash.
 	 *
 	 * @return bool
 	 */
@@ -41,7 +45,7 @@ class WPSEO_Redirect_Util {
 	}
 
 	/**
-	 * Returns whether or not the URL has query variables
+	 * Returns whether or not the URL has query variables.
 	 *
 	 * @param string $url The URL.
 	 * @return bool
@@ -51,7 +55,7 @@ class WPSEO_Redirect_Util {
 	}
 
 	/**
-	 * Returns whether or not the given URL has a fragment identifier
+	 * Returns whether or not the given URL has a fragment identifier.
 	 *
 	 * @param string $url The URL to parse.
 	 *
@@ -63,40 +67,63 @@ class WPSEO_Redirect_Util {
 			return true;
 		}
 
-		// @todo Replace with call to wp_parse_url() once minimum requirement has gone up to WP 4.7.
-		$fragment = parse_url( $url, PHP_URL_FRAGMENT );
+		$fragment = wp_parse_url( $url, PHP_URL_FRAGMENT );
 
 		return ! empty( $fragment );
 	}
 
 	/**
-	 * Returns whether or not the given URL has an extension
+	 * Returns whether or not the given URL has an extension.
 	 *
 	 * @param string $url The URL to parse.
 	 *
 	 * @return bool Whether or not the given URL has an extension.
 	 */
 	public static function has_extension( $url ) {
-		// @todo Replace with call to wp_parse_url() once minimum requirement has gone up to WP 4.7.
-		$parsed = parse_url( $url, PHP_URL_PATH );
+		$parsed = wp_parse_url( $url, PHP_URL_PATH );
 
 		return false !== strpos( $parsed, '.' );
 	}
 
 	/**
-	 * Returns whether or not a target URL requires a trailing slash
+	 * Returns whether or not a target URL requires a trailing slash.
 	 *
 	 * @param string $target_url The target URL to check.
 	 *
 	 * @return bool
 	 */
 	public static function requires_trailing_slash( $target_url ) {
-		return
-			'/' !== $target_url &&
+		return '/' !== $target_url &&
 			self::has_permalink_trailing_slash() &&
 			self::is_relative_url( $target_url ) &&
 			! self::has_query_parameters( $target_url ) &&
 			! self::has_fragment_identifier( $target_url ) &&
 			! self::has_extension( $target_url );
+	}
+
+	/**
+	 * Removes the base url path from the given URL.
+	 *
+	 * @param string $base_url The base URL that will be stripped.
+	 * @param string $url      URL to remove the path from.
+	 *
+	 * @return string The URL without the base url
+	 */
+	public static function strip_base_url_path_from_url( $base_url, $url ) {
+		$base_url_path = wp_parse_url( $base_url, PHP_URL_PATH );
+		$base_url_path = ltrim( $base_url_path, '/' );
+
+		if ( empty( $base_url_path ) ) {
+			return $url;
+		}
+
+		$url = ltrim( $url, '/' );
+
+		// When the url doesn't begin with the base url path.
+		if ( stripos( trailingslashit( $url ), trailingslashit( $base_url_path ) ) !== 0 ) {
+			return $url;
+		}
+
+		return substr( $url, strlen( $base_url_path ) );
 	}
 }

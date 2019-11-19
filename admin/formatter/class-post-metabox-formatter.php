@@ -1,25 +1,26 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\Formatter
  */
 
 /**
- * This class provides data for the post metabox by return its values for localization
+ * This class provides data for the post metabox by return its values for localization.
  */
 class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface {
 
 	/**
+	 * Holds the WordPress Post.
+	 *
 	 * @var WP_Post
 	 */
 	private $post;
 
 	/**
-	 * @var array Array with the WPSEO_Titles options.
-	 */
-	protected $options;
-
-	/**
-	 * @var string The permalink to follow.
+	 * The permalink to follow.
+	 *
+	 * @var string
 	 */
 	private $permalink;
 
@@ -32,7 +33,6 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	 */
 	public function __construct( $post, array $options, $structure ) {
 		$this->post      = $post;
-		$this->options   = $options;
 		$this->permalink = $structure;
 	}
 
@@ -47,14 +47,16 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 			'post_edit_url'       => $this->edit_url(),
 			'base_url'            => $this->base_url_for_js(),
 			'metaDescriptionDate' => '',
+
 		);
 
 		if ( $this->post instanceof WP_Post ) {
 			$values_to_set = array(
-				'keyword_usage'       => $this->get_focus_keyword_usage(),
-				'title_template'      => $this->get_title_template(),
-				'metadesc_template'   => $this->get_metadesc_template(),
-				'metaDescriptionDate' => $this->get_metadesc_date(),
+				'keyword_usage'            => $this->get_focus_keyword_usage(),
+				'title_template'           => $this->get_title_template(),
+				'metadesc_template'        => $this->get_metadesc_template(),
+				'metaDescriptionDate'      => $this->get_metadesc_date(),
+				'social_preview_image_url' => $this->get_image_url(),
 			);
 
 			$values = ( $values_to_set + $values );
@@ -64,7 +66,23 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	}
 
 	/**
-	 * Returns the url to search for keyword for the post
+	 * Gets the image URL for the post's social preview.
+	 *
+	 * @return string|null The image URL for the social preview.
+	 */
+	protected function get_image_url() {
+		$post_id = $this->post->ID;
+
+		if ( has_post_thumbnail( $post_id ) ) {
+			$featured_image_info = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), 'thumbnail' );
+			return $featured_image_info[0];
+		}
+
+		return WPSEO_Image_Utils::get_first_usable_content_image_for_post( $post_id );
+	}
+
+	/**
+	 * Returns the url to search for keyword for the post.
 	 *
 	 * @return string
 	 */
@@ -73,7 +91,7 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	}
 
 	/**
-	 * Returns the url to edit the taxonomy
+	 * Returns the url to edit the taxonomy.
 	 *
 	 * @return string
 	 */
@@ -82,7 +100,7 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	}
 
 	/**
-	 * Returns a base URL for use in the JS, takes permalink structure into account
+	 * Returns a base URL for use in the JS, takes permalink structure into account.
 	 *
 	 * @return string
 	 */
@@ -157,10 +175,16 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	/**
 	 * Retrieves the title template.
 	 *
-	 * @return string
+	 * @return string The title template.
 	 */
 	private function get_title_template() {
-		return $this->get_template( 'title' );
+		$title = $this->get_template( 'title' );
+
+		if ( $title === '' ) {
+			return '%%title%% %%sep%% %%sitename%%';
+		}
+
+		return $title;
 	}
 
 	/**
@@ -182,15 +206,15 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	private function get_template( $template_option_name ) {
 		$needed_option = $template_option_name . '-' . $this->post->post_type;
 
-		if ( isset( $this->options[ $needed_option ] ) && $this->options[ $needed_option ] !== '' ) {
-			return $this->options[ $needed_option ];
+		if ( WPSEO_Options::get( $needed_option, '' ) !== '' ) {
+			return WPSEO_Options::get( $needed_option );
 		}
 
 		return '';
 	}
 
 	/**
-	 * Determines the date to be displayed in the snippet preview
+	 * Determines the date to be displayed in the snippet preview.
 	 *
 	 * @return string
 	 */
@@ -210,9 +234,8 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	 * @return bool
 	 */
 	private function is_show_date_enabled() {
-		$post_type = $this->post->post_type;
-		$key       = sprintf( 'showdate-%s', $post_type );
+		$key = sprintf( 'showdate-%s', $this->post->post_type );
 
-		return isset( $this->options[ $key ] ) && true === $this->options[ $key ];
+		return WPSEO_Options::get( $key, true );
 	}
 }

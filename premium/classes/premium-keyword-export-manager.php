@@ -1,16 +1,22 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
 /**
- * Class WPSEO_Export_Keywords_Manager
+ * Class WPSEO_Export_Keywords_Manager.
  *
  * Manages exporting keywords.
  */
 class WPSEO_Premium_Keyword_Export_Manager implements WPSEO_WordPress_Integration {
 
-	/** @var wpdb instance */
+	/**
+	 * A WordPress database object.
+	 *
+	 * @var wpdb instance
+	 */
 	protected $wpdb;
 
 	/**
@@ -31,7 +37,7 @@ class WPSEO_Premium_Keyword_Export_Manager implements WPSEO_WordPress_Integratio
 	public function keywords_export_tab_header() {
 		if ( current_user_can( 'export' ) ) {
 			echo '<a class="nav-tab" id="keywords-export-tab" href="#top#keywords-export">'
-				. esc_html__( 'Export keywords', 'wordpress-seo-premium' )
+				. esc_html__( 'Export keyphrases', 'wordpress-seo-premium' )
 				. '</a>';
 		}
 	}
@@ -131,6 +137,8 @@ class WPSEO_Premium_Keyword_Export_Manager implements WPSEO_WordPress_Integratio
 			'export-keywords-score'    => 'keywords_score',
 			'export-url'               => 'url',
 			'export-title'             => 'title',
+			'export-seo-title'         => 'seo_title',
+			'export-meta-description'  => 'meta_description',
 			'export-readability-score' => 'readability_score',
 		);
 

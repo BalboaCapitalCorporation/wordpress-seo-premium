@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\Links
  */
 
@@ -8,7 +10,11 @@
  */
 class WPSEO_Link_Watcher {
 
-	/** @var WPSEO_Link_Content_Processor */
+	/**
+	 * Represents the content processor. It will extract links from the content and saves them for the given post id.
+	 *
+	 * @var WPSEO_Link_Content_Processor
+	 */
 	protected $content_processor;
 
 	/**
@@ -39,7 +45,16 @@ class WPSEO_Link_Watcher {
 	 * @return void
 	 */
 	public function save_post( $post_id, WP_Post $post ) {
-		if ( ! WPSEO_Link_Table_Accessible::check_table_is_accessible() || ! WPSEO_Meta_Table_Accessible::is_accessible() ) {
+		/**
+		 * Filter: 'wpseo_should_index_links' - Allows disabling of Yoast's links indexation.
+		 *
+		 * @api bool To disable the indexation, return false.
+		 */
+		if ( ! apply_filters( 'wpseo_should_index_links', true ) ) {
+			return;
+		}
+
+		if ( ! WPSEO_Link_Table_Accessible::is_accessible() || ! WPSEO_Meta_Table_Accessible::is_accessible() ) {
 			return;
 		}
 
@@ -48,8 +63,9 @@ class WPSEO_Link_Watcher {
 			return;
 		}
 
-		// When the post status is auto-draft.
-		if ( $post->post_status === 'auto-draft' ) {
+		$post_statuses_to_skip = array( 'auto-draft', 'trash' );
+
+		if ( in_array( $post->post_status, $post_statuses_to_skip, true ) ) {
 			return;
 		}
 
@@ -69,7 +85,12 @@ class WPSEO_Link_Watcher {
 	 * @return void
 	 */
 	public function delete_post( $post_id ) {
-		if ( ! WPSEO_Link_Table_Accessible::check_table_is_accessible() || ! WPSEO_Meta_Table_Accessible::is_accessible() ) {
+		/** This filter is documented in admin/links/class-link-watcher.php */
+		if ( ! apply_filters( 'wpseo_should_index_links', true ) ) {
+			return;
+		}
+
+		if ( ! WPSEO_Link_Table_Accessible::is_accessible() || ! WPSEO_Meta_Table_Accessible::is_accessible() ) {
 			return;
 		}
 

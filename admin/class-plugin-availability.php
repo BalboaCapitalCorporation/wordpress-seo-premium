@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Plugin_Availability
  */
 
@@ -9,6 +11,8 @@
 class WPSEO_Plugin_Availability {
 
 	/**
+	 * Holds the plugins.
+	 *
 	 * @var array
 	 */
 	protected $plugins = array();
@@ -27,7 +31,7 @@ class WPSEO_Plugin_Availability {
 	protected function register_yoast_plugins() {
 		$this->plugins = array(
 			'yoast-seo-premium' => array(
-				'url'          => 'https://yoast.com/wordpress/plugins/seo-premium/',
+				'url'          => WPSEO_Shortlinker::get( 'https://yoa.st/1y7' ),
 				'title'        => 'Yoast SEO Premium',
 				'description'  => sprintf(
 					/* translators: %1$s expands to Yoast SEO */
@@ -37,37 +41,37 @@ class WPSEO_Plugin_Availability {
 				'installed'    => false,
 				'slug'         => 'wordpress-seo-premium/wp-seo-premium.php',
 				'version_sync' => true,
-				'premium'       => true,
+				'premium'      => true,
 			),
 
 			'video-seo-for-wordpress-seo-by-yoast' => array(
-				'url'          => 'https://yoast.com/wordpress/plugins/video-seo/',
+				'url'          => WPSEO_Shortlinker::get( 'https://yoa.st/1y8' ),
 				'title'        => 'Video SEO',
 				'description'  => __( 'Optimize your videos to show them off in search results and get more clicks!', 'wordpress-seo' ),
 				'installed'    => false,
 				'slug'         => 'wpseo-video/video-seo.php',
 				'version_sync' => true,
-				'premium'       => true,
+				'premium'      => true,
 			),
 
 			'yoast-news-seo' => array(
-				'url'          => 'https://yoast.com/wordpress/plugins/news-seo/',
+				'url'          => WPSEO_Shortlinker::get( 'https://yoa.st/1y9' ),
 				'title'        => 'News SEO',
 				'description'  => __( 'Are you in Google News? Increase your traffic from Google News by optimizing for it!', 'wordpress-seo' ),
 				'installed'    => false,
 				'slug'         => 'wpseo-news/wpseo-news.php',
 				'version_sync' => true,
-				'premium'       => true,
+				'premium'      => true,
 			),
 
 			'local-seo-for-yoast-seo' => array(
-				'url'          => 'https://yoast.com/wordpress/plugins/local-seo/',
+				'url'          => WPSEO_Shortlinker::get( 'https://yoa.st/1ya' ),
 				'title'        => 'Local SEO',
 				'description'  => __( 'Rank better locally and in Google Maps, without breaking a sweat!', 'wordpress-seo' ),
 				'installed'    => false,
 				'slug'         => 'wordpress-seo-local/local-seo.php',
 				'version_sync' => true,
-				'premium'       => true,
+				'premium'      => true,
 			),
 
 			'yoast-woocommerce-seo' => array(
@@ -107,23 +111,6 @@ class WPSEO_Plugin_Availability {
 				),
 				'version_sync'  => false,
 			),
-
-			'yoastseo-amp' => array(
-				'url'           => 'https://wordpress.org/plugins/glue-for-yoast-seo-amp/',
-				'title'         => 'Yoast SEO AMP Glue',
-				'description'   => sprintf(
-					/* translators: %1$s expands to Yoast SEO */
-					__( 'Seamlessly integrate %1$s into your AMP pages!', 'wordpress-seo' ), 'Yoast SEO'
-				),
-				'installed'     => false,
-				'slug'          => 'glue-for-yoast-seo-amp/yoastseo-amp.php',
-				'_dependencies' => array(
-					'AMP' => array(
-						'slug' => 'amp/amp.php',
-					),
-				),
-				'version_sync'  => false,
-			),
 		);
 	}
 
@@ -149,7 +136,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Checks whether or not a plugin is known within the Yoast SEO collection.
 	 *
-	 * @param {string} $plugin The plugin to search for.
+	 * @param string $plugin The plugin to search for.
 	 *
 	 * @return bool Whether or not the plugin is exists.
 	 */
@@ -169,7 +156,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Gets a specific plugin. Returns an empty array if it cannot be found.
 	 *
-	 * @param {string} $plugin The plugin to search for.
+	 * @param string $plugin The plugin to search for.
 	 *
 	 * @return array The plugin properties.
 	 */
@@ -184,7 +171,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Gets the version of the plugin.
 	 *
-	 * @param {string} $plugin The plugin to search for.
+	 * @param array $plugin The information available about the plugin.
 	 *
 	 * @return string The version associated with the plugin.
 	 */
@@ -199,7 +186,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Checks if there are dependencies available for the plugin.
 	 *
-	 * @param {string} $plugin The plugin to search for.
+	 * @param array $plugin The information available about the plugin.
 	 *
 	 * @return bool Whether or not there is a dependency present.
 	 */
@@ -210,7 +197,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Gets the dependencies for the plugin.
 	 *
-	 * @param {string} $plugin The plugin to search for.
+	 * @param array $plugin The information available about the plugin.
 	 *
 	 * @return array Array containing all the dependencies associated with the plugin.
 	 */
@@ -225,7 +212,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Checks if all dependencies are satisfied.
 	 *
-	 * @param {string} $plugin The plugin to search for.
+	 * @param array $plugin The information available about the plugin.
 	 *
 	 * @return bool Whether or not the dependencies are satisfied.
 	 */
@@ -243,7 +230,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Checks whether or not one of the plugins is properly installed and usable.
 	 *
-	 * @param {string} $plugin The plugin to search for.
+	 * @param array $plugin The information available about the plugin.
 	 *
 	 * @return bool Whether or not the plugin is properly installed.
 	 */
@@ -275,7 +262,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Checks for the availability of the plugin.
 	 *
-	 * @param {string} $plugin The plugin to search for.
+	 * @param array $plugin The information available about the plugin.
 	 *
 	 * @return bool Whether or not the plugin is available.
 	 */
@@ -286,7 +273,7 @@ class WPSEO_Plugin_Availability {
 	/**
 	 * Checks whether a dependency is available.
 	 *
-	 * @param {string} $dependency The dependency to look for.
+	 * @param array $dependency The information about the dependency to look for.
 	 *
 	 * @return bool Whether or not the dependency is available.
 	 */

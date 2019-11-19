@@ -1,39 +1,43 @@
 <?php
 /**
- * @package Premium
+ * WPSEO Premium plugin file.
+ *
+ * @package WPSEO\Premium
  */
 
 /**
  * Initializer for the social previews.
  */
-class WPSEO_Social_Previews {
+class WPSEO_Social_Previews implements WPSEO_WordPress_Integration {
 
 	/**
-	 * Enqueues the assets.
+	 * Registers the hooks.
+	 *
+	 * @codeCoverageIgnore Method uses dependencies.
+	 *
+	 * @return void
 	 */
-	public function set_hooks() {
-		$this->register_assets();
+	public function register_hooks() {
+		add_action( 'wp_ajax_retrieve_image_data_from_url', array( $this, 'ajax_retrieve_image_data_from_url' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
 	/**
-	 * Sets the hooks necessary for AJAX
-	 */
-	public function set_ajax_hooks() {
-		add_action( 'wp_ajax_retrieve_image_data_from_url', array( $this, 'ajax_retrieve_image_data_from_url' ) );
-	}
-
-	/**
 	 * Enqueues the javascript and css files needed for the social previews.
+	 *
+	 * @codeCoverageIgnore Method uses dependencies.
+	 *
+	 * @return void
 	 */
 	public function enqueue_assets() {
 		wp_enqueue_style( 'yoast-social-preview-css' );
 		wp_enqueue_style( 'yoast-premium-social-preview' );
 		wp_enqueue_script( 'yoast-social-preview' );
+		wp_localize_script( 'yoast-social-preview', 'yoastSocialPreview', $this->localize() );
 	}
 
 	/**
-	 * Retrieves image data from an image URL
+	 * Retrieves image data from an image URL.
 	 */
 	public function ajax_retrieve_image_data_from_url() {
 		$url = filter_input( INPUT_GET, 'imageURL' );
@@ -56,11 +60,12 @@ class WPSEO_Social_Previews {
 			);
 		}
 
-		wp_die( wp_json_encode( $result ) );
+		// phpcs:ignore WordPress.Security.EscapeOutput -- WPCS bug/methods can't be whitelisted yet.
+		wp_die( WPSEO_Utils::format_json_encode( $result ) );
 	}
 
 	/**
-	 * Determines an attachment ID from a URL which might be an attachment URL
+	 * Determines an attachment ID from a URL which might be an attachment URL.
 	 *
 	 * @link https://philipnewcomer.net/2012/11/get-the-attachment-id-from-an-image-url-in-wordpress/
 	 *
@@ -104,45 +109,23 @@ class WPSEO_Social_Previews {
 	}
 
 	/**
-	 * Register the required assets.
-	 */
-	private function register_assets() {
-		$asset_manager = new WPSEO_Admin_Asset_Manager();
-		$version       = $asset_manager->flatten_version( WPSEO_VERSION );
-
-		wp_register_script( 'yoast-social-preview', plugin_dir_url( WPSEO_PREMIUM_FILE ) . 'assets/js/dist/yoast-premium-social-preview-' . $version . WPSEO_CSSJS_SUFFIX . '.js', array(
-			'jquery',
-			'jquery-ui-core',
-		), WPSEO_VERSION );
-
-		wp_localize_script( 'yoast-social-preview', 'yoastSocialPreview', $this->localize() );
-
-		$deps = array( WPSEO_Admin_Asset_Manager::PREFIX . 'metabox-css' );
-
-		wp_register_style( 'yoast-social-preview-css', plugin_dir_url( WPSEO_PREMIUM_FILE ) . 'assets/dist/social_preview/yoast-social-preview-390.min.css', $deps, WPSEO_VERSION );
-		wp_register_style( 'yoast-premium-social-preview', plugin_dir_url( WPSEO_PREMIUM_FILE ) . 'assets/css/dist/premium-social-preview-' . $version . '.min.css', $deps, WPSEO_VERSION );
-	}
-
-	/**
 	 * Returns the translations.
 	 *
 	 * @return array
 	 */
 	private function localize() {
-		$options = WPSEO_Options::get_option( 'wpseo_social' );
-
-		if ( empty( WPSEO_Social_Admin::$meta_fields['social']['opengraph-title']['description'] ) ) {
+		if ( empty( WPSEO_Meta::$meta_fields['social']['opengraph-title']['description'] ) ) {
 			WPSEO_Social_Admin::translate_meta_boxes();
 		}
 
-		$social = WPSEO_Social_Admin::$meta_fields['social'];
+		$social = WPSEO_Meta::$meta_fields['social'];
 
 		return array(
 			'website'               => $this->get_website(),
 			'uploadImage'           => __( 'Upload image', 'wordpress-seo-premium' ),
 			'useOtherImage'         => __( 'Use other image', 'wordpress-seo-premium' ),
 			'removeImageButton'     => __( 'Remove image', 'wordpress-seo-premium' ),
-			'facebookDefaultImage'  => $options['og_default_image'],
+			'facebookDefaultImage'  => WPSEO_Options::get( 'og_default_image' ),
 			'i18n'                  => array(
 				'help'       => $this->get_help_translations( $social ),
 				'helpButton' => array(
@@ -192,8 +175,7 @@ class WPSEO_Social_Previews {
 	 */
 	private function get_website() {
 		// We only want the host part of the URL.
-		// @todo Replace with call to wp_parse_url() once minimum requirement has gone up to WP 4.7.
-		$website = parse_url( home_url(), PHP_URL_HOST );
+		$website = wp_parse_url( home_url(), PHP_URL_HOST );
 		$website = trim( $website, '/' );
 		$website = strtolower( $website );
 
@@ -206,7 +188,7 @@ class WPSEO_Social_Previews {
 	 * @return array
 	 */
 	private function get_translations() {
-		$file = plugin_dir_path( WPSEO_FILE ) . 'premium/languages/wordpress-seo-premium-' . WPSEO_Utils::get_user_locale() . '.json';
+		$file = plugin_dir_path( WPSEO_FILE ) . 'premium/languages/yoast-social-previews-' . WPSEO_Language_Utils::get_user_locale() . '.json';
 		if ( file_exists( $file ) ) {
 			$file = file_get_contents( $file );
 			if ( $file !== false ) {
@@ -215,5 +197,41 @@ class WPSEO_Social_Previews {
 		}
 
 		return array();
+	}
+
+	/**
+	 * Enqueues the assets.
+	 *
+	 * @deprecated 9.4
+	 * @codeCoverageIgnore
+	 *
+	 * @return void
+	 */
+	public function set_hooks() {
+		_deprecated_function( 'WPSEO_Social_Previews::set_hooks', '9.4', 'WPSEO_Social_Previews::register_hooks' );
+	}
+
+	/**
+	 * Sets the hooks necessary for AJAX.
+	 *
+	 * @deprecated 9.4
+	 * @codeCoverageIgnore
+	 *
+	 * @return void
+	 */
+	public function set_ajax_hooks() {
+		_deprecated_function( 'WPSEO_Social_Previews::set_ajax_hooks', '9.4' );
+	}
+
+	/**
+	 * Register the required assets.
+	 *
+	 * @deprecated 9.4
+	 * @codeCoverageIgnore
+	 *
+	 * @return void
+	 */
+	public function register_assets() {
+		_deprecated_function( 'WPSEO_Social_Previews::set_ajax_hooks', '9.4' );
 	}
 }

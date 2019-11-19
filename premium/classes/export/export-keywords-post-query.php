@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes\Export
  */
 
@@ -10,22 +12,46 @@
  */
 class WPSEO_Export_Keywords_Post_Query implements WPSEO_Export_Keywords_Query {
 
-	/** @var wpdb The WordPress database object. */
+	/**
+	 * The WordPress database object.
+	 *
+	 * @var wpdb
+	 */
 	protected $wpdb;
 
-	/** @var array The columns to query for. */
+	/**
+	 * The columns to query for.
+	 *
+	 * @var array
+	 */
 	protected $columns;
 
-	/** @var array The database columns to select in the query. */
+	/**
+	 * The database columns to select in the query.
+	 *
+	 * @var array
+	 */
 	protected $selects;
 
-	/** @var array The database tables to join in the query. */
+	/**
+	 * The database tables to join in the query.
+	 *
+	 * @var array
+	 */
 	protected $joins = array();
 
-	/** @var int Number of items to fetch per page */
+	/**
+	 * Number of items to fetch per page.
+	 *
+	 * @var int
+	 */
 	protected $page_size;
 
-	/** @var  string Escaped list of post types */
+	/**
+	 * Escaped list of post types.
+	 *
+	 * @var string
+	 */
 	protected $escaped_post_types;
 
 	/**
@@ -113,6 +139,14 @@ class WPSEO_Export_Keywords_Post_Query implements WPSEO_Export_Keywords_Query {
 			// Score for other keywords is already in the other_keywords select so only join for the primary_keyword_score.
 			$this->add_meta_join( 'primary_keyword_score', WPSEO_Meta::$meta_prefix . 'linkdex' );
 		}
+
+		if ( in_array( 'seo_title', $this->columns, true ) ) {
+			$this->add_meta_join( 'seo_title', WPSEO_Meta::$meta_prefix . 'title' );
+		}
+
+		if ( in_array( 'meta_description', $this->columns, true ) ) {
+			$this->add_meta_join( 'meta_description', WPSEO_Meta::$meta_prefix . 'metadesc' );
+		}
 	}
 
 	/**
@@ -142,25 +176,4 @@ class WPSEO_Export_Keywords_Post_Query implements WPSEO_Export_Keywords_Query {
 			. 'ON ' . $alias . '_join.post_id = posts.ID '
 			. 'AND ' . $alias . '_join.meta_key = "' . $key . '"';
 	}
-
-	/**
-	 * Escapes the post types to be used in an SQL list.
-	 *
-	 * @deprecated 5.8.0
-	 *
-	 * @return string Escaped post types.
-	 */
-	protected function get_escaped_post_types() {
-		_deprecated_function( __METHOD__, 'WPSEO 5.8.0' );
-
-		static $escaped = null;
-
-		if ( $escaped === null ) {
-			// Get all public post types and run esc_sql on them.
-			$escaped = implode( '", "', array_map( 'esc_sql', WPSEO_Post_Type::get_accessible_post_types() ) );
-		}
-
-		return $escaped;
-	}
-
 }

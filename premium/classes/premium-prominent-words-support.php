@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium
  */
 
@@ -20,10 +22,25 @@ class WPSEO_Premium_Prominent_Words_Support {
 		 * @api array The accessible post types.
 		 */
 		$prominent_words_post_types = apply_filters( 'wpseo_prominent_words_post_types', WPSEO_Post_Type::get_accessible_post_types() );
+
 		if ( ! is_array( $prominent_words_post_types ) || empty( $prominent_words_post_types ) ) {
 			$prominent_words_post_types = array();
 		}
 
+		$prominent_words_post_types = WPSEO_Post_Type::filter_attachment_post_type( $prominent_words_post_types );
+		$prominent_words_post_types = array_filter( $prominent_words_post_types, array( 'WPSEO_Post_Type', 'has_metabox_enabled' ) );
+
 		return $prominent_words_post_types;
+	}
+
+	/**
+	 * Checks if the post type is supported.
+	 *
+	 * @param string $post_type The post type to look up.
+	 *
+	 * @return bool True when post type is supported.
+	 */
+	public function is_post_type_supported( $post_type ) {
+		return in_array( $post_type, $this->get_supported_post_types(), true );
 	}
 }

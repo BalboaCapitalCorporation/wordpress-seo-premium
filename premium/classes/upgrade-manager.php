@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium\Classes
  */
 
@@ -38,7 +40,6 @@ class WPSEO_Upgrade_Manager {
 	 * @param string $version_number The version number that will be compared.
 	 */
 	public function check_update( $version_number ) {
-
 		// Get current version.
 		$current_version = get_site_option( WPSEO_Premium::OPTION_CURRENT_VERSION, 1 );
 
@@ -72,6 +73,45 @@ class WPSEO_Upgrade_Manager {
 			add_action( 'admin_head', array( 'WPSEO_Premium_Prominent_Words_Versioning', 'upgrade_4_8' ), 12 );
 		}
 
+		if ( version_compare( $version_number, '9.8-RC0', '<' ) ) {
+			add_action( 'init', array( $this, 'upgrade_9_8' ), 12 );
+		}
+
+		if ( version_compare( $version_number, '10.3', '<' ) ) {
+			add_action( 'init', array( $this, 'upgrade_11' ), 12 );
+		}
+	}
+
+	/**
+	 * Removes the orphaned content notification.
+	 *
+	 * @return void
+	 */
+	public function upgrade_11() {
+		$orphaned_content_support = new WPSEO_Premium_Orphaned_Content_Support();
+		$notification_manager     = Yoast_Notification_Center::get();
+
+		foreach ( $orphaned_content_support->get_supported_post_types() as $post_type ) {
+			// We need to remove the dismissal first, to clean up better but also as otherwise the remove won't work.
+			delete_metadata( 'user', false, 'wpseo-premium-orphaned-content-' . $post_type, '', true );
+			$notification_manager->remove_notification_by_id( 'wpseo-premium-orphaned-content-' . $post_type, true );
+		}
+
+		// Remove the cronjob if present.
+		wp_clear_scheduled_hook( 'wpseo-premium-orphaned-content' );
+	}
+
+	/**
+	 * Removes the stale cornerstone content beta notification.
+	 *
+	 * @return void
+	 */
+	public function upgrade_9_8() {
+		$notification_manager = Yoast_Notification_Center::get();
+		$notification_manager->remove_notification_by_id( 'wpseo-stale-content-notification' );
+
+		// Delete the user meta data that tracks whether the user has seen the notification.
+		delete_metadata( 'user', false, 'wp_wpseo-stale-content-notification', '', true );
 	}
 
 	/**
@@ -109,13 +149,11 @@ class WPSEO_Upgrade_Manager {
 		if ( $this->should_retry_upgrade_31() ) {
 			if ( $immediately ) {
 				WPSEO_Redirect_Upgrade::upgrade_3_1();
+				return;
 			}
-			else {
-				add_action( 'wp', array( 'WPSEO_Redirect_Upgrade', 'upgrade_3_1' ), 12 );
-				add_action( 'admin_head', array( 'WPSEO_Redirect_Upgrade', 'upgrade_3_1' ), 12 );
-			}
+			add_action( 'wp', array( 'WPSEO_Redirect_Upgrade', 'upgrade_3_1' ), 12 );
+			add_action( 'admin_head', array( 'WPSEO_Redirect_Upgrade', 'upgrade_3_1' ), 12 );
 		}
-
 	}
 
 	/**
@@ -124,26 +162,6 @@ class WPSEO_Upgrade_Manager {
 	 * @param string $current_version The current version number of the installation.
 	 */
 	private function do_update( $current_version ) {
-		// < 1.0.4.
-		if ( $current_version < 5 ) {
-
-			/**
-			 * Upgrade to version 1.0.4
-			 *
-			 * - Save the old license to the new license option
-			 */
-
-			// Save the old license to the new license option.
-			$license_manager = WPSEO_Premium::get_license_manager();
-			$license_manager->set_license_key( trim( get_option( 'wpseo_license_key', '' ) ) );
-			$license_manager->set_license_status( trim( get_option( 'wpseo_license_status', '' ) ) );
-
-			// Remove old license options.
-			delete_option( 'wpseo_license_key' );
-			delete_option( 'wpseo_license_status' );
-
-		}
-
 		// Upgrade to version 1.2.0.
 		if ( $current_version < 15 ) {
 			/**
@@ -152,7 +170,6 @@ class WPSEO_Upgrade_Manager {
 			add_action( 'wp', array( 'WPSEO_Redirect_Upgrade', 'upgrade_1_2_0' ), 10 );
 			add_action( 'admin_head', array( 'WPSEO_Redirect_Upgrade', 'upgrade_1_2_0' ), 10 );
 		}
-
 	}
 
 	/**

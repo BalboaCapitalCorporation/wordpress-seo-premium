@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium
  */
 
@@ -10,10 +12,13 @@ class WPSEO_Premium_Redirect_EndPoint implements WPSEO_WordPress_Integration {
 
 	const REST_NAMESPACE = 'yoast/v1';
 	const ENDPOINT_QUERY = 'redirects';
+	const ENDPOINT_UNDO  = 'redirects/delete';
 
 	const CAPABILITY_RETRIEVE = 'edit_posts';
 
 	/**
+	 * Instance of the WPSEO_Premium_Redirect_Service class.
+	 *
 	 * @var WPSEO_Premium_Redirect_Service
 	 */
 	protected $service;
@@ -38,34 +43,66 @@ class WPSEO_Premium_Redirect_EndPoint implements WPSEO_WordPress_Integration {
 	 * Register the REST endpoint to WordPress.
 	 */
 	public function register() {
-		register_rest_route( self::REST_NAMESPACE, self::ENDPOINT_QUERY, array(
-			'methods'             => 'POST',
-			'args'                => array(
-				'origin' => array(
-					'required'    => true,
-					'type'        => 'string',
-					'description' => 'The origin to redirect',
-				),
-				'target' => array(
-					'required'    => false,
-					'type'        => 'string',
-					'description' => 'The redirect target',
-				),
-				'type' => array(
-					'required'    => true,
-					'type'        => 'integer',
-					'description' => 'The redirect type',
-				),
+		$args = array(
+			'origin' => array(
+				'required'    => true,
+				'type'        => 'string',
+				'description' => 'The origin to redirect',
 			),
-			'callback'            => array(
-				$this->service,
-				'save',
+			'target' => array(
+				'required'    => false,
+				'type'        => 'string',
+				'description' => 'The redirect target',
 			),
-			'permission_callback' => array(
-				$this,
-				'can_retrieve_data',
+			'type' => array(
+				'required'    => true,
+				'type'        => 'integer',
+				'description' => 'The redirect type',
 			),
-		) );
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ENDPOINT_QUERY,
+			array(
+				'methods'             => 'POST',
+				'args'                => $args,
+				'callback'            => array(
+					$this->service,
+					'save',
+				),
+				'permission_callback' => array(
+					$this,
+					'can_retrieve_data',
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ENDPOINT_UNDO,
+			array(
+				'methods'             => 'POST',
+				'args'                => array_merge(
+					$args,
+					array(
+						'type' => array(
+							'required'    => false,
+							'type'        => 'string',
+							'description' => 'The redirect format',
+						),
+					)
+				),
+				'callback'            => array(
+					$this->service,
+					'delete',
+				),
+				'permission_callback' => array(
+					$this,
+					'can_retrieve_data',
+				),
+			)
+		);
 	}
 
 	/**

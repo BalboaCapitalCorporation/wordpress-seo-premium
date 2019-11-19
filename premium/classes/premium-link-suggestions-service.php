@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO Premium plugin file.
+ *
  * @package WPSEO\Premium
  */
 
@@ -10,7 +12,10 @@ class WPSEO_Premium_Link_Suggestions_Service {
 	const CACHE_PREFIX = 'wpseo_link_suggestions_';
 
 	/**
+	 * Query posts and pages for link suggestions using a list of prominent words.
+	 *
 	 * @param WP_REST_Request $request The request object.
+	 *
 	 * @return WP_REST_Response The response for the query of link suggestions.
 	 */
 	public function query( WP_REST_Request $request ) {
@@ -64,7 +69,7 @@ class WPSEO_Premium_Link_Suggestions_Service {
 		$suggestion_ids = wp_list_pluck( $suggestions, 'id' );
 
 		$replacements   = $suggestion_ids;
-		$replacements[] = WPSEO_Cornerstone::META_NAME;
+		$replacements[] = '_yoast_wpseo_is_cornerstone';
 
 		// Find all posts in the list that are cornerstone items.
 		$results = $wpdb->get_results(
@@ -127,7 +132,7 @@ class WPSEO_Premium_Link_Suggestions_Service {
 	}
 
 	/**
-	 * Sorts suggestions by isCornerstone
+	 * Sorts suggestions by isCornerstone.
 	 *
 	 * @param array $a Suggestion A.
 	 * @param array $b Suggestion B.
@@ -155,7 +160,9 @@ class WPSEO_Premium_Link_Suggestions_Service {
 	 */
 	private function retrieve_posts( $prominent_word_id ) {
 		$query_args  = array(
-			'tax_query' => $this->get_tax_query( $prominent_word_id ),
+			// phpcs:ignore WordPress.DB.SlowDBQuery -- Unavoidable.
+			'tax_query'    => $this->get_tax_query( $prominent_word_id ),
+			'post_status'  => 'publish',
 		);
 		$posts_query = new WP_Query( $query_args );
 
@@ -203,7 +210,7 @@ class WPSEO_Premium_Link_Suggestions_Service {
 	 *
 	 * @param WP_Post $post The post to prepare.
 	 *
-	 * @return array The link to put in the link suggestions
+	 * @return array The link to put in the link suggestions.
 	 */
 	private function get_post_object( $post ) {
 		$post  = $post['post'];
