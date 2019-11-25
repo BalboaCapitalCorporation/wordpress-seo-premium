@@ -1,4 +1,5 @@
 {
-	"name": "wordpress-seo-premium",
+	"name": "balboacapital/wordpress-seo-premium",
+	"description": "Balboa Capital Yoast SEO Premium Plugin",
 	"type": "wordpress-plugin"
 }
